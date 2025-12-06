@@ -1,0 +1,277 @@
+<!-- templates/hse/company/edit.html -->
+{% extends 'base.html' %}
+
+{% block title %}ویرایش شرکت {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:company_detail' company.id %}" class="btn btn-outline-info">
+        <i class="fas fa-eye me-2"></i>مشاهده
+    </a>
+    <button type="button" class="btn btn-danger" id="deleteCompanyBtn">
+        <i class="fas fa-trash me-2"></i>حذف
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit text-warning me-2"></i>
+                    ویرایش شرکت {{ company.name }}
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <form method="post" id="editCompanyForm" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <!-- نام شرکت -->
+                        <div class="col-md-12 mb-3">
+                            <label for="editName" class="form-label">نام شرکت *</label>
+                            <input type="text" name="name" id="editName"
+                                   class="form-control"
+                                   value="{{ form.name.value|default:company.name }}"
+                                   required>
+                            <div class="invalid-feedback" id="nameError"></div>
+                        </div>
+
+                        <!-- حوزه فعالیت -->
+                        <div class="col-md-12 mb-3">
+                            <label for="editActivity" class="form-label">حوزه فعالیت *</label>
+                            <input type="text" name="activity_field" id="editActivity"
+                                   class="form-control"
+                                   value="{{ form.activity_field.value|default:company.activity_field }}"
+                                   required>
+                            <div class="invalid-feedback" id="activityError"></div>
+                        </div>
+
+                        <!-- وضعیت فعال -->
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="is_active"
+                                       class="form-check-input" id="editIsActive"
+                                       {% if company.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="editIsActive">
+                                    شرکت فعال باشد
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                        <div>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>
+                                <span id="submitText">بروزرسانی شرکت</span>
+                                <span id="loadingSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                            </button>
+                            <a href="{% url 'hse:company_detail' company.id %}" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-times me-2"></i>انصراف
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal حذف شرکت -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    حذف شرکت
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا مطمئن هستید که می‌خواهید شرکت "<strong>{{ company.name }}</strong>" را حذف کنید؟</p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    این عمل غیرقابل بازگشت است! تمامی اطلاعات مربوط به این شرکت شامل:
+                    <ul class="mb-0 mt-2">
+                        <li>بخش‌ها و اعضا</li>
+                        <li>بازرسی‌ها و حوادث</li>
+                        <li>وظایف و گزارشات</li>
+                    </ul>
+                    حذف خواهند شد.
+                </div>
+                <div class="form-check mt-3">
+                    <input type="checkbox" class="form-check-input" id="confirmDelete">
+                    <label class="form-check-label text-danger" for="confirmDelete">
+                        تایید می‌کنم که می‌خواهم این شرکت را حذف کنم
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                    <i class="fas fa-trash me-2"></i>حذف شرکت
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Modal حذف
+    $('#deleteCompanyBtn').click(function() {
+        $('#deleteModal').modal('show');
+    });
+
+    // فعال کردن دکمه حذف با تیک
+    $('#confirmDelete').change(function() {
+        $('#confirmDeleteBtn').prop('disabled', !$(this).is(':checked'));
+    });
+
+    // حذف شرکت
+    $('#confirmDeleteBtn').click(function() {
+        if (!$(this).prop('disabled')) {
+            $.ajax({
+                url: "{% url 'hse:company_delete' company.id %}",
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(response) {
+                    $('#deleteModal').modal('hide');
+                    showToast('success', 'شرکت با موفقیت حذف شد');
+                    setTimeout(() => {
+                        window.location.href = "{% url 'hse:company_list' %}";
+                    }, 1500);
+                },
+                error: function(xhr) {
+                    showToast('error', 'خطا در حذف شرکت');
+                }
+            });
+        }
+    });
+
+    // اعتبارسنجی فرم ویرایش
+    $('#editCompanyForm').submit(function(e) {
+        e.preventDefault();
+
+        // ریست خطاها
+        $('.form-control').removeClass('is-invalid');
+        $('.invalid-feedback').empty();
+
+        let isValid = true;
+
+        // اعتبارسنجی نام شرکت
+        const companyName = $('#editName').val().trim();
+        if (!companyName) {
+            showError('editName', 'نام شرکت الزامی است');
+            isValid = false;
+        }
+
+        // اعتبارسنجی حوزه فعالیت
+        const activityField = $('#editActivity').val().trim();
+        if (!activityField) {
+            showError('editActivity', 'حوزه فعالیت الزامی است');
+            isValid = false;
+        }
+
+        if (isValid) {
+            // نمایش loading
+            $('#submitText').text('در حال بروزرسانی...');
+            $('#loadingSpinner').show();
+
+            // ارسال فرم
+            $.ajax({
+                url: $(this).attr('action') || window.location.href,
+                method: 'POST',
+                data: $(this).serialize(),
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('success', 'شرکت با موفقیت بروزرسانی شد');
+                        setTimeout(() => {
+                            window.location.href = "{% url 'hse:company_detail' company.id %}";
+                        }, 1500);
+                    }
+                },
+                error: function(xhr) {
+                    $('#submitText').text('بروزرسانی شرکت');
+                    $('#loadingSpinner').hide();
+
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        const errors = xhr.responseJSON.errors;
+                        for (const field in errors) {
+                            showError('edit' + field.charAt(0).toUpperCase() + field.slice(1), errors[field][0]);
+                        }
+                    } else {
+                        showToast('error', 'خطا در بروزرسانی شرکت');
+                    }
+                }
+            });
+        }
+
+        return false;
+    });
+
+    // توابع کمکی
+    function showError(fieldId, message) {
+        const element = $('#' + fieldId);
+        element.addClass('is-invalid');
+        $('#' + fieldId + 'Error').text(message);
+        element.focus();
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showToast(type, message) {
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        if (!$('.toast-container').length) {
+            $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+        }
+
+        $('.toast-container').append(toastHtml);
+
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+
+        setTimeout(() => {
+            $(`#${toastId}`).remove();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,300 @@
+<!-- templates/hse/company/list.html -->
+{% extends 'base.html' %}
+
+{% block title %}شرکت‌های من{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:company_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus me-2"></i>شرکت جدید
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- آمار -->
+<div class="row mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card bg-primary">
+            <i class="fas fa-building"></i>
+            <span class="number">{{ stats.total }}</span>
+            <small>کل شرکت‌ها</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card bg-success">
+            <i class="fas fa-check-circle"></i>
+            <span class="number">{{ stats.active }}</span>
+            <small>فعال</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card bg-info">
+            <i class="fas fa-sitemap"></i>
+            <span class="number">{{ stats.departments }}</span>
+            <small>بخش</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card bg-warning">
+            <i class="fas fa-users"></i>
+            <span class="number">{{ stats.members }}</span>
+            <small>عضو</small>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-building text-primary me-2"></i>لیست شرکت‌های من</h5>
+
+        <div class="input-group" style="width: 300px;">
+            <input type="text" class="form-control" placeholder="جستجوی شرکت..." id="searchCompany">
+            <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        {% if companies %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="companyTable">
+                <thead>
+                    <tr>
+                        <th>نام شرکت</th>
+                        <th>حوزه فعالیت</th>
+                        <th>وضعیت</th>
+                        <th>آمار</th>
+                        <th>تاریخ ایجاد</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
+                    <tr data-company-id="{{ company.id }}">
+                        <td>
+                            <strong>{{ company.name }}</strong>
+                            <div class="text-muted small">
+                                ID: {{ company.id|slice:":8" }}...
+                            </div>
+                        </td>
+                        <td>{{ company.activity_field }}</td>
+                        <td>
+                            {% if company.is_active %}
+                            <span class="badge bg-success" id="status-{{ company.id }}">
+                                <i class="fas fa-check-circle me-1"></i>فعال
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary" id="status-{{ company.id }}">
+                                <i class="fas fa-times-circle me-1"></i>غیرفعال
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-info" title="بخش‌ها">
+                                    <i class="fas fa-sitemap"></i> {{ company.departments.count }}
+                                </span>
+                                <span class="badge bg-warning" title="اعضا">
+                                    <i class="fas fa-users"></i> {{ company.members.count }}
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            {{ company.created_at|date:"Y/m/d" }}
+                            <div class="text-muted small">
+                                {{ company.created_at|timesince }} پیش
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'hse:dashboard' company.id %}"
+                                   class="btn btn-outline-primary" title="داشبورد">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </a>
+                                <a href="{% url 'hse:company_detail' company.id %}"
+                                   class="btn btn-outline-info" title="مشاهده">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'hse:company_edit' company.id %}"
+                                   class="btn btn-outline-warning" title="ویرایش">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-outline-danger toggle-status"
+                                        data-company-id="{{ company.id }}"
+                                        data-company-name="{{ company.name }}"
+                                        title="تغییر وضعیت">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5" id="noCompanies">
+            <i class="fas fa-building fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">هنوز شرکتی ایجاد نکرده‌اید</h5>
+            <p class="text-muted mb-4">برای شروع مدیریت HSE شرکت خود، اولین شرکت را ایجاد کنید.</p>
+            <a href="{% url 'hse:company_create' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>ایجاد اولین شرکت
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // جستجوی شرکت‌ها
+    $('#searchCompany').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        $('#companyTable tbody tr').each(function() {
+            const text = $(this).text().toLowerCase();
+            if (text.includes(searchTerm)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    // تغییر وضعیت شرکت
+    $('.toggle-status').click(function(e) {
+        e.preventDefault();
+        const companyId = $(this).data('company-id');
+        const companyName = $(this).data('company-name');
+        const currentStatus = $('#status-' + companyId).hasClass('bg-success');
+        const newStatus = !currentStatus;
+
+        if (confirm(`آیا می‌خواهید شرکت "${companyName}" را ${newStatus ? 'فعال' : 'غیرفعال'} کنید؟`)) {
+            // ساخت URL به صورت دستی
+            const toggleUrl = `/hse/companies/${companyId}/toggle-active/`;
+
+            $.ajax({
+                url: toggleUrl,
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                data: {
+                    'company_id': companyId
+                },
+                success: function(response) {
+                    // بروزرسانی وضعیت در UI
+                    const statusBadge = $('#status-' + companyId);
+                    const button = $(`.toggle-status[data-company-id="${companyId}"]`);
+
+                    if (newStatus) {
+                        statusBadge.removeClass('bg-secondary').addClass('bg-success');
+                        statusBadge.html('<i class="fas fa-check-circle me-1"></i>فعال');
+                        button.removeClass('btn-outline-danger').addClass('btn-outline-success');
+                    } else {
+                        statusBadge.removeClass('bg-success').addClass('bg-secondary');
+                        statusBadge.html('<i class="fas fa-times-circle me-1"></i>غیرفعال');
+                        button.removeClass('btn-outline-success').addClass('btn-outline-danger');
+                    }
+
+                    showToast('success', `وضعیت شرکت "${companyName}" تغییر کرد`);
+                },
+                error: function(xhr) {
+                    showToast('error', 'خطا در تغییر وضعیت شرکت');
+                }
+            });
+        }
+    });
+
+    // توابع کمکی
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showToast(type, message) {
+        // ایجاد toast
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        // اضافه کردن toast به container
+        if (!$('.toast-container').length) {
+            $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+        }
+
+        $('.toast-container').append(toastHtml);
+
+        // نمایش toast
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+
+        // حذف toast بعد از 5 ثانیه
+        setTimeout(() => {
+            $(`#${toastId}`).remove();
+        }, 5000);
+    }
+});
+</script>
+
+<style>
+.stat-card {
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card .number {
+    font-size: 2rem;
+    font-weight: bold;
+    display: block;
+    margin: 10px 0;
+}
+
+.stat-card small {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+#noCompanies {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+}
+</style>
+{% endblock %}

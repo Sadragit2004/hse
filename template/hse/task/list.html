@@ -1,0 +1,182 @@
+<!-- templates/hse/task/list.html -->
+{% extends 'base.html' %}
+
+{% block title %}وظایف - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:task_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>وظیفه جدید
+    </a>
+    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="fas fa-filter me-2"></i>فیلتر
+    </button>
+    <div class="dropdown-menu p-3" style="width: 300px;">
+        <form method="get">
+            <div class="mb-3">
+                <label class="form-label">وضعیت:</label>
+                <select name="status" class="form-select">
+                    <option value="">همه</option>
+                    {% for value, label in task_status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">اولویت:</label>
+                <select name="priority" class="form-select">
+                    <option value="">همه</option>
+                    {% for value, label in task_priority_choices %}
+                    <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">مسئول:</label>
+                <select name="assigned_to" class="form-select">
+                    <option value="">همه</option>
+                    {% for member in members %}
+                    <option value="{{ member.id }}" {% if assigned_filter == member.id|stringformat:"s" %}selected{% endif %}>
+                        {{ member.user.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">اعمال فیلتر</button>
+                <a href="{% url 'hse:task_list' company.id %}" class="btn btn-outline-secondary">حذف فیلتر</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-tasks text-primary me-2"></i>لیست وظایف</h5>
+    </div>
+
+    <div class="card-body">
+        {% if tasks %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>عنوان</th>
+                        <th>مسئول</th>
+                        <th>اولویت</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ سررسید</th>
+                        <th>مرتبط با</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr {% if task.due_date < today %}class="table-danger"{% endif %}>
+                        <td>
+                            <a href="{% url 'hse:task_detail' company.id task.id %}">
+                                {{ task.title }}
+                            </a>
+                            {% if task.description %}
+                            <small class="text-muted d-block">{{ task.description|truncatechars:50 }}</small>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if task.assigned_to %}
+                            {{ task.assigned_to.user.full_name }}
+                            {% else %}
+                            <span class="text-muted">تعیین نشده</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if task.priority == 'URGENT' %}
+                            <span class="badge bg-danger">فوری</span>
+                            {% elif task.priority == 'HIGH' %}
+                            <span class="badge bg-warning text-dark">بالا</span>
+                            {% elif task.priority == 'MEDIUM' %}
+                            <span class="badge bg-info">متوسط</span>
+                            {% else %}
+                            <span class="badge bg-success">پایین</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if task.status == 'COMPLETED' %}
+                            <span class="badge bg-success">تکمیل شده</span>
+                            {% elif task.status == 'IN_PROGRESS' %}
+                            <span class="badge bg-warning text-dark">در حال انجام</span>
+                            {% elif task.status == 'OVERDUE' %}
+                            <span class="badge bg-danger">معوقه</span>
+                            {% elif task.status == 'CANCELLED' %}
+                            <span class="badge bg-secondary">لغو شده</span>
+                            {% else %}
+                            <span class="badge bg-info">در انتظار</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ task.due_date|date:"Y/m/d" }}
+                            {% if task.completed_date %}
+                            <small class="d-block text-success">تکمیل: {{ task.completed_date|date:"Y/m/d" }}</small>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if task.related_inspection %}
+                            <span class="badge bg-info">بازرسی</span>
+                            {% elif task.related_incident %}
+                            <span class="badge bg-warning">حادثه</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'hse:task_detail' company.id task.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if task.status != 'COMPLETED' and task.status != 'CANCELLED' %}
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-warning dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for value, label in task_status_choices %}
+                                        {% if value != task.status %}
+                                        <li>
+                                            <form method="post" action="{% url 'hse:task_update_status' company.id task.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="status" value="{{ value }}">
+                                                <button type="submit" class="dropdown-item">{{ label }}</button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-tasks fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">هیچ وظیفه‌ای یافت نشد</h5>
+            <p class="text-muted mb-4">برای ایجاد اولین وظیفه، روی دکمه "وظیفه جدید" کلیک کنید.</p>
+            <a href="{% url 'hse:task_create' company.id %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>ایجاد وظیفه جدید
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

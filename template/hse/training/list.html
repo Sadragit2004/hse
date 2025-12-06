@@ -1,0 +1,175 @@
+<!-- templates/hse/training/list.html -->
+{% extends 'base.html' %}
+
+{% block title %}آموزش‌ها - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:training_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>آموزش جدید
+    </a>
+    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="fas fa-filter me-2"></i>فیلتر
+    </button>
+    <div class="dropdown-menu p-3" style="width: 300px;">
+        <form method="get">
+            <div class="mb-3">
+                <label class="form-label">نوع آموزش:</label>
+                <select name="training_type" class="form-select">
+                    <option value="">همه</option>
+                    {% for value, label in training_type_choices %}
+                    <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">وضعیت:</label>
+                <select name="status" class="form-select">
+                    <option value="">همه</option>
+                    {% for value, label in training_status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">بخش:</label>
+                <select name="department" class="form-select">
+                    <option value="">همه</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if department_filter == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">اعمال فیلتر</button>
+                <a href="{% url 'hse:training_list' company.id %}" class="btn btn-outline-secondary">حذف فیلتر</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-graduation-cap text-primary me-2"></i>لیست آموزش‌ها</h5>
+    </div>
+
+    <div class="card-body">
+        {% if trainings %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>عنوان</th>
+                        <th>نوع</th>
+                        <th>سطح</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ برگزاری</th>
+                        <th>مدت</th>
+                        <th>شرکت‌کنندگان</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for training in trainings %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'hse:training_detail' company.id training.id %}">
+                                {{ training.title }}
+                            </a>
+                            {% if training.description %}
+                            <small class="text-muted d-block">{{ training.description|truncatechars:50 }}</small>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <span class="badge bg-info">{{ training.get_training_type_display }}</span>
+                        </td>
+
+                        <td>
+                            {% if training.level == 'ADVANCED' %}
+                            <span class="badge bg-danger">پیشرفته</span>
+                            {% elif training.level == 'INTERMEDIATE' %}
+                            <span class="badge bg-warning">متوسط</span>
+                            {% else %}
+                            <span class="badge bg-success">مقدماتی</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if training.status == 'COMPLETED' %}
+                            <span class="badge bg-success">تکمیل شده</span>
+                            {% elif training.status == 'IN_PROGRESS' %}
+                            <span class="badge bg-warning">در حال اجرا</span>
+                            {% elif training.status == 'CANCELLED' %}
+                            <span class="badge bg-secondary">لغو شده</span>
+                            {% else %}
+                            <span class="badge bg-info">برنامه‌ریزی شده</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ training.scheduled_date|date:"Y/m/d - H:i" }}
+                            {% if training.completion_date %}
+                            <small class="d-block text-success">تکمیل: {{ training.completion_date|date:"Y/m/d" }}</small>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ training.duration_minutes }} دقیقه</td>
+
+                        <td>
+                            {{ training.participants.count }} نفر
+                            {% if training.video %}
+                            <i class="fas fa-video text-info ms-2" title="دارای فیلم"></i>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'hse:training_detail' company.id training.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'hse:training_update' company.id training.id %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if training.status != 'COMPLETED' %}
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for value, label in training_status_choices %}
+                                        {% if value != training.status %}
+                                        <li>
+                                            <form method="post" action="{% url 'hse:training_update_status' company.id training.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="status" value="{{ value }}">
+                                                <button type="submit" class="dropdown-item">{{ label }}</button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-graduation-cap fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">هیچ آموزشی یافت نشد</h5>
+            <p class="text-muted mb-4">برای ایجاد اولین آموزش، روی دکمه "آموزش جدید" کلیک کنید.</p>
+            <a href="{% url 'hse:training_create' company.id %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>ایجاد آموزش جدید
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

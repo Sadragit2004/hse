@@ -1,0 +1,350 @@
+<!-- templates/hse/base.html -->
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}سیستم HSE{% endblock %}</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+        }
+
+        body {
+            font-family: 'Vazir', 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+        }
+
+        .sidebar {
+            background: var(--primary);
+            color: white;
+            min-height: 100vh;
+            width: 250px;
+            position: fixed;
+            right: 0;
+            top: 0;
+            transition: all 0.3s;
+        }
+
+        .main-content {
+            margin-right: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                right: -250px;
+            }
+            .sidebar.active {
+                right: 0;
+            }
+            .main-content {
+                margin-right: 0;
+            }
+        }
+
+        .nav-link {
+            color: #ecf0f1;
+            padding: 12px 20px;
+            margin: 2px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-link i {
+            width: 24px;
+            margin-left: 10px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #eee;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+
+        .stat-card {
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 2.2rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-card i {
+            font-size: 2.5rem;
+            opacity: 0.9;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .btn {
+            border-radius: 8px;
+            padding: 8px 20px;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+        }
+
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+
+        .pagination {
+            justify-content: center;
+        }
+
+        .page-link {
+            border-radius: 6px;
+            margin: 0 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="p-3">
+            <h4 class="text-white">
+                <i class="fas fa-shield-alt"></i>
+                سیستم HSE
+            </h4>
+            <small class="text-white-50">مدیریت ایمنی و بهداشت</small>
+        </div>
+
+        <hr class="bg-white mx-3">
+
+        <nav class="nav flex-column">
+            {% if company %}
+            <!-- داشبورد -->
+            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'hse:dashboard' company.id %}">
+                <i class="fas fa-tachometer-alt"></i>
+                داشبورد
+            </a>
+
+            <!-- شرکت‌ها -->
+            <a class="nav-link {% if 'company' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:company_detail' company.id %}">
+                <i class="fas fa-building"></i>
+                شرکت
+            </a>
+
+            <!-- بخش‌ها -->
+            <a class="nav-link {% if 'department' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:department_list' company.id %}">
+                <i class="fas fa-sitemap"></i>
+                بخش‌ها
+            </a>
+
+            <!-- اعضا -->
+            <a class="nav-link {% if 'member' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:member_list' company.id %}">
+                <i class="fas fa-users"></i>
+                اعضا
+            </a>
+
+            <!-- بازرسی‌ها -->
+            <a class="nav-link {% if 'inspection' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:inspection_list' company.id %}">
+                <i class="fas fa-clipboard-check"></i>
+                بازرسی‌ها
+            </a>
+
+            <!-- حوادث -->
+            <a class="nav-link {% if 'incident' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:incident_list' company.id %}">
+                <i class="fas fa-exclamation-triangle"></i>
+                حوادث
+            </a>
+
+            <!-- وظایف -->
+            <a class="nav-link {% if 'task' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:task_list' company.id %}">
+                <i class="fas fa-tasks"></i>
+                وظایف
+            </a>
+
+
+
+            <!-- دعوت‌نامه‌ها -->
+            <a class="nav-link {% if 'invitation' in request.resolver_match.url_name %}active{% endif %}"
+                href="{% url 'hse:invitation_list' company.id %}">
+                <i class="fas fa-envelope"></i>
+                    دعوت عضو
+            </a>
+            <!-- دعوت‌نامه‌ها -->
+            <a class="nav-link {% if 'invitation' in request.resolver_match.url_name %}active{% endif %}"
+                href="{% url 'hse:training_create' company.id %}">
+                <i class="fas fa-envelope"></i>
+                   اضافه کردن اموزش
+            </a>
+            <a class="nav-link {% if 'invitation' in request.resolver_match.url_name %}active{% endif %}"
+                href="{% url 'hse:ai_assistant' %}">
+                <i class="fas fa-envelope"></i>
+                     مشاور هوش مصنوعی
+            </a>
+            {% endif %}
+
+            <!-- اعلان‌ها -->
+            <a class="nav-link {% if 'notification' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:notification_list' %}">
+                <i class="fas fa-bell"></i>
+                اعلان‌ها
+                <span id="notification-badge" class="badge bg-danger" style="display: none;">0</span>
+            </a>
+
+            <!-- لیست شرکت‌ها -->
+            <a class="nav-link {% if request.resolver_match.url_name == 'company_list' %}active{% endif %}"
+               href="{% url 'hse:company_list' %}">
+                <i class="fas fa-list"></i>
+                شرکت‌های من
+            </a>
+
+            <!-- خروج -->
+            <div class="mt-4 pt-3 border-top">
+                <a class="nav-link text-danger" href="#">
+                    <i class="fas fa-sign-out-alt"></i>
+                    خروج
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <nav class="navbar navbar-light bg-white rounded-3 shadow-sm mb-4">
+            <div class="container-fluid">
+                <!-- Sidebar Toggle Button (Mobile) -->
+                <button class="btn btn-outline-primary d-md-none" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <!-- Page Title -->
+                <div class="navbar-brand">
+                    <i class="fas fa-building text-primary me-2"></i>
+                    {% if company %}{{ company.name }}{% else %}سیستم HSE{% endif %}
+                </div>
+
+                <!-- User Info -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user me-2"></i>
+                        {{ request.user.get_full_name|default:request.user.name }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>پروفایل</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>خروج</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">
+                {% block page_title %}{{ page_title|default:"سیستم HSE" }}{% endblock %}
+            </h2>
+            {% block page_actions %}{% endblock %}
+        </div>
+
+        <!-- Main Content -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        // Sidebar Toggle for Mobile
+        $('#sidebarToggle').click(function() {
+            $('.sidebar').toggleClass('active');
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert').alert('close');
+        }, 5000);
+
+        // Update notification badge
+        function updateNotificationBadge() {
+            $.get('{% url "hse:notification_count" %}', function(data) {
+                const badge = $('#notification-badge');
+                if (data.count > 0) {
+                    badge.text(data.count).show();
+                } else {
+                    badge.hide();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            updateNotificationBadge();
+            setInterval(updateNotificationBadge, 30000);
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

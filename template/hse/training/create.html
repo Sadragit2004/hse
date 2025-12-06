@@ -1,0 +1,344 @@
+<!-- templates/hse/training/create.html -->
+{% extends 'base.html' %}
+
+{% block title %}ایجاد آموزش جدید - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:training_list' company.id %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">ایجاد آموزش جدید</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="trainingForm">
+            {% csrf_token %}
+
+            <!-- اطلاعات اصلی -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h6 class="border-bottom pb-2 mb-3">اطلاعات اصلی آموزش</h6>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_title" class="form-label">
+                        عنوان آموزش
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="title" id="id_title"
+                           class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                           placeholder="عنوان آموزش"
+                           value="{{ form.title.value|default:'' }}"
+                           required>
+                    {% if form.title.errors %}
+                    <div class="text-danger">
+                        {% for error in form.title.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_training_type" class="form-label">
+                        نوع آموزش
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select name="training_type" id="id_training_type"
+                            class="form-select {% if form.training_type.errors %}is-invalid{% endif %}" required>
+                        <option value="">انتخاب کنید</option>
+                        <option value="SAFETY" {% if form.training_type.value == 'SAFETY' %}selected{% endif %}>ایمنی</option>
+                        <option value="ENVIRONMENTAL" {% if form.training_type.value == 'ENVIRONMENTAL' %}selected{% endif %}>محیط زیستی</option>
+                        <option value="HEALTH" {% if form.training_type.value == 'HEALTH' %}selected{% endif %}>بهداشتی</option>
+                        <option value="FIRE" {% if form.training_type.value == 'FIRE' %}selected{% endif %}>اطفاء حریق</option>
+                        <option value="FIRST_AID" {% if form.training_type.value == 'FIRST_AID' %}selected{% endif %}>کمک‌های اولیه</option>
+                        <option value="ERGONOMIC" {% if form.training_type.value == 'ERGONOMIC' %}selected{% endif %}>ارگونومی</option>
+                        <option value="CHEMICAL" {% if form.training_type.value == 'CHEMICAL' %}selected{% endif %}>مواد شیمیایی</option>
+                        <option value="EQUIPMENT" {% if form.training_type.value == 'EQUIPMENT' %}selected{% endif %}>تجهیزات</option>
+                    </select>
+                    {% if form.training_type.errors %}
+                    <div class="text-danger">
+                        {% for error in form.training_type.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_level" class="form-label">
+                        سطح آموزش
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select name="level" id="id_level"
+                            class="form-select {% if form.level.errors %}is-invalid{% endif %}" required>
+                        <option value="">انتخاب کنید</option>
+                        <option value="BASIC" {% if form.level.value == 'BASIC' %}selected{% endif %}>مقدماتی</option>
+                        <option value="INTERMEDIATE" {% if form.level.value == 'INTERMEDIATE' %}selected{% endif %}>متوسط</option>
+                        <option value="ADVANCED" {% if form.level.value == 'ADVANCED' %}selected{% endif %}>پیشرفته</option>
+                    </select>
+                    {% if form.level.errors %}
+                    <div class="text-danger">
+                        {% for error in form.level.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_department" class="form-label">بخش (اختیاری)</label>
+                    <select name="department" id="id_department"
+                            class="form-select {% if form.department.errors %}is-invalid{% endif %}">
+                        <option value="">انتخاب کنید</option>
+                        {% for dept in form.department.field.queryset %}
+                        <option value="{{ dept.id }}" {% if form.department.value == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.department.errors %}
+                    <div class="text-danger">
+                        {% for error in form.department.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label for="id_description" class="form-label">توضیحات (اختیاری)</label>
+                    <textarea name="description" id="id_description"
+                              class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                              rows="3">{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                    <div class="text-danger">
+                        {% for error in form.description.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- زمان‌بندی -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h6 class="border-bottom pb-2 mb-3">زمان‌بندی آموزش</h6>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        تاریخ برگزاری
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" id="scheduled_date_date"
+                           class="form-control {% if form.scheduled_date.errors %}is-invalid{% endif %}"
+                           value="{% now 'Y-m-d' %}"
+                           required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        زمان برگزاری
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="time" id="scheduled_date_time"
+                           class="form-control {% if form.scheduled_date.errors %}is-invalid{% endif %}"
+                           value="{% now 'H:i' %}"
+                           required>
+                </div>
+
+                <!-- فیلد مخفی برای ارسال ترکیب تاریخ و زمان -->
+                <input type="hidden" name="scheduled_date" id="id_scheduled_date">
+
+                {% if form.scheduled_date.errors %}
+                <div class="text-danger">
+                    {% for error in form.scheduled_date.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_duration_minutes" class="form-label">
+                        مدت زمان آموزش (دقیقه)
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" name="duration_minutes" id="id_duration_minutes"
+                           class="form-control {% if form.duration_minutes.errors %}is-invalid{% endif %}"
+                           min="1" value="60" required>
+                    {% if form.duration_minutes.errors %}
+                    <div class="text-danger">
+                        {% for error in form.duration_minutes.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- افراد -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h6 class="border-bottom pb-2 mb-3">افراد مرتبط</h6>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_instructor" class="form-label">مدرس (اختیاری)</label>
+                    <select name="instructor" id="id_instructor"
+                            class="form-select {% if form.instructor.errors %}is-invalid{% endif %}">
+                        <option value="">بدون مدرس</option>
+                        {% for member in form.instructor.field.queryset %}
+                        <option value="{{ member.id }}" {% if form.instructor.value == member.id %}selected{% endif %}>
+                            {{ member.user.full_name }} ({{ member.get_position_display }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.instructor.errors %}
+                    <div class="text-danger">
+                        {% for error in form.instructor.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_participants" class="form-label">شرکت‌کنندگان (اختیاری)</label>
+                    <select name="participants" id="id_participants"
+                            class="form-select {% if form.participants.errors %}is-invalid{% endif %}" multiple size="5">
+                        {% for member in form.participants.field.queryset %}
+                        <option value="{{ member.id }}" {% if member.id in form.participants.value %}selected{% endif %}>
+                            {{ member.user.full_name }} ({{ member.department.name|default:"-" }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">برای انتخاب چند نفر، کلید Ctrl را نگه دارید.</small>
+                    {% if form.participants.errors %}
+                    <div class="text-danger">
+                        {% for error in form.participants.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- فایل‌ها -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h6 class="border-bottom pb-2 mb-3">فایل‌های آموزش</h6>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_video" class="form-label">فیلم آموزش (اختیاری)</label>
+                    <input type="file" name="video" id="id_video"
+                           class="form-control {% if form.video.errors %}is-invalid{% endif %}"
+                           accept="video/*">
+                    <small class="form-text text-muted">فرمت‌های مجاز: mp4, avi, mov, wmv</small>
+                    {% if form.video.errors %}
+                    <div class="text-danger">
+                        {% for error in form.video.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_attachment" class="form-label">ضمیمه (اختیاری)</label>
+                    <input type="file" name="attachment" id="id_attachment"
+                           class="form-control {% if form.attachment.errors %}is-invalid{% endif %}">
+                    <small class="form-text text-muted">فرمت‌های مجاز: pdf, doc, docx, ppt, pptx</small>
+                    {% if form.attachment.errors %}
+                    <div class="text-danger">
+                        {% for error in form.attachment.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'hse:training_list' company.id %}" class="btn btn-secondary">
+                    انصراف
+                </a>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    ایجاد آموزش
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('scheduled_date_date');
+    const timeInput = document.getElementById('scheduled_date_time');
+    const hiddenDatetime = document.getElementById('id_scheduled_date');
+    const form = document.getElementById('trainingForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // تابع برای ترکیب تاریخ و زمان
+    function updateDateTime() {
+        if (dateInput.value && timeInput.value) {
+            // ترکیب تاریخ و زمان: YYYY-MM-DDTHH:MM
+            hiddenDatetime.value = dateInput.value + 'T' + timeInput.value + ':00';
+        }
+    }
+
+    // رویدادهای تغییر
+    dateInput.addEventListener('change', updateDateTime);
+    timeInput.addEventListener('change', updateDateTime);
+
+    // تنظیم حداقل تاریخ به امروز
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+
+    // اعتبارسنجی قبل از ارسال فرم
+    form.addEventListener('submit', function(event) {
+        updateDateTime();
+
+        if (!dateInput.value) {
+            event.preventDefault();
+            alert('لطفاً تاریخ برگزاری را وارد کنید.');
+            return false;
+        }
+
+        if (!timeInput.value) {
+            event.preventDefault();
+            alert('لطفاً زمان برگزاری را وارد کنید.');
+            return false;
+        }
+
+        if (!hiddenDatetime.value) {
+            event.preventDefault();
+            alert('خطا در ترکیب تاریخ و زمان.');
+            return false;
+        }
+
+        // بررسی اینکه تاریخ برگزاری از امروز کمتر نباشد
+        const selectedDate = new Date(dateInput.value);
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
+
+        if (selectedDate < todayDate) {
+            event.preventDefault();
+            alert('تاریخ برگزاری نمی‌تواند از تاریخ امروز کمتر باشد.');
+            return false;
+        }
+
+        // غیرفعال کردن دکمه ارسال برای جلوگیری از ارسال مجدد
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>در حال ایجاد...';
+    });
+
+    // بروزرسانی اولیه
+    updateDateTime();
+});
+</script>
+{% endblock %}

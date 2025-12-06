@@ -1,0 +1,149 @@
+<!-- templates/hse/incident/create.html -->
+{% extends 'base.html' %}
+
+{% block title %}ثبت حادثه جدید - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:incident_list' company.id %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">ثبت حادثه جدید</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="incidentForm">
+            {% csrf_token %}
+
+            {% for field in form %}
+                {% if field.name != 'incident_date' %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">
+                        {{ field.label }}
+                        {% if field.field.required %}
+                        <span class="text-danger">*</span>
+                        {% endif %}
+                    </label>
+
+                    {% if field.field.widget.input_type == 'select' %}
+                    <select name="{{ field.name }}" id="{{ field.id_for_label }}"
+                            class="form-select {% if field.errors %}is-invalid{% endif %}">
+                        {% for value, text in field.field.choices %}
+                        <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>
+                            {{ text }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% elif field.field.widget.input_type == 'textarea' %}
+                    <textarea name="{{ field.name }}" id="{{ field.id_for_label }}"
+                              class="form-control {% if field.errors %}is-invalid{% endif %}"
+                              rows="4">{{ field.value|default:'' }}</textarea>
+                    {% elif field.field.widget.input_type == 'file' %}
+                    <input type="file" name="{{ field.name }}" id="{{ field.id_for_label }}"
+                           class="form-control {% if field.errors %}is-invalid{% endif %}">
+                    {% else %}
+                    <input type="{{ field.field.widget.input_type|default:'text' }}"
+                           name="{{ field.name }}" id="{{ field.id_for_label }}"
+                           class="form-control {% if field.errors %}is-invalid{% endif %}"
+                           value="{{ field.value|default:'' }}"
+                           {% if field.field.widget.attrs.placeholder %}placeholder="{{ field.field.widget.attrs.placeholder }}"{% endif %}>
+                    {% endif %}
+
+                    {% if field.help_text %}
+                    <div class="form-text">{{ field.help_text }}</div>
+                    {% endif %}
+
+                    {% if field.errors %}
+                    <div class="text-danger">
+                        {% for error in field.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            <!-- فیلد تاریخ و زمان جداگانه -->
+            <div class="mb-3">
+                <label class="form-label">
+                    تاریخ و زمان وقوع
+                    <span class="text-danger">*</span>
+                </label>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <input type="date"
+                               id="incident_date_date"
+                               class="form-control {% if form.incident_date.errors %}is-invalid{% endif %}"
+                               value="{% now 'Y-m-d' %}"
+                               required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <input type="time"
+                               id="incident_date_time"
+                               class="form-control {% if form.incident_date.errors %}is-invalid{% endif %}"
+                               value="{% now 'H:i' %}"
+                               required>
+                    </div>
+                </div>
+                <!-- فیلد مخفی برای ارسال مقدار ترکیبی -->
+                <input type="hidden" name="incident_date" id="id_incident_date"
+                       value="{% now 'Y-m-d' %}T{% now 'H:i' %}">
+
+                {% if form.incident_date.errors %}
+                <div class="text-danger">
+                    {% for error in form.incident_date.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'hse:incident_list' company.id %}" class="btn btn-secondary">
+                    انصراف
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    ثبت حادثه
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('incident_date_date');
+    const timeInput = document.getElementById('incident_date_time');
+    const hiddenInput = document.getElementById('id_incident_date');
+    const form = document.getElementById('incidentForm');
+
+    function updateDateTime() {
+        if (dateInput.value && timeInput.value) {
+            // ترکیب تاریخ و زمان به فرمت: YYYY-MM-DDTHH:MM
+            hiddenInput.value = dateInput.value + 'T' + timeInput.value + ':00';
+        }
+    }
+
+    dateInput.addEventListener('change', updateDateTime);
+    timeInput.addEventListener('change', updateDateTime);
+
+    // بروزرسانی اولیه
+    updateDateTime();
+
+    // اعتبارسنجی قبل از ارسال فرم
+    form.addEventListener('submit', function(event) {
+        updateDateTime();
+
+        if (!dateInput.value || !timeInput.value) {
+            event.preventDefault();
+            alert('لطفاً تاریخ و زمان وقوع را وارد کنید.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

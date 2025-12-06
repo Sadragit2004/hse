@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+
+{% block title %}اعلان‌ها{% endblock %}
+
+{% block page_actions %}
+<button type="button" class="btn btn-outline-secondary" onclick="markAllAsRead()">
+    <i class="fas fa-check-double me-2"></i>علامت‌گذاری همه به عنوان خوانده شده
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bell text-primary me-2"></i>
+                    {{ page_title }}
+                </h5>
+                <small class="text-muted">
+                    {% if unread_count > 0 %}
+                    <span class="badge bg-warning">{{ unread_count }} اعلان خوانده نشده</span>
+                    {% else %}
+                    همه اعلان‌ها خوانده شده‌اند
+                    {% endif %}
+                </small>
+            </div>
+
+            <div class="card-body">
+                {% if page_obj.object_list %}
+                <div class="list-group">
+                    {% for item in page_obj.object_list %}
+                    {% with notification=item.notification invitation=item.invitation can_respond=item.can_respond %}
+                    <div class="list-group-item list-group-item-action {% if not notification.is_read %}list-group-item-light{% endif %}">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1 me-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    {% if notification.notification_type == 'INVITATION' %}
+                                    <span class="badge bg-info me-2">
+                                        <i class="fas fa-envelope me-1"></i>دعوت
+                                    </span>
+                                    {% elif notification.notification_type == 'TASK_ASSIGNED' %}
+                                    <span class="badge bg-success me-2">
+                                        <i class="fas fa-tasks me-1"></i>وظیفه
+                                    </span>
+                                    {% elif notification.notification_type == 'INSPECTION_REMINDER' %}
+                                    <span class="badge bg-warning me-2">
+                                        <i class="fas fa-search me-1"></i>بازرسی
+                                    </span>
+                                    {% elif notification.notification_type == 'INCIDENT_REPORT' %}
+                                    <span class="badge bg-danger me-2">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>حادثه
+                                    </span>
+                                    {% elif notification.notification_type == 'SYSTEM' %}
+                                    <span class="badge bg-secondary me-2">
+                                        <i class="fas fa-cog me-1"></i>سیستمی
+                                    </span>
+                                    {% elif notification.notification_type == 'WARNING' %}
+                                    <span class="badge bg-danger me-2">
+                                        <i class="fas fa-exclamation-circle me-1"></i>هشدار
+                                    </span>
+                                    {% endif %}
+
+                                    <h6 class="mb-0">{{ notification.title }}</h6>
+                                </div>
+
+                                <p class="mb-2">{{ notification.message }}</p>
+
+                                <!-- دکمه‌های اقدام برای دعوت‌نامه‌ها -->
+                                {% if notification.notification_type == 'INVITATION' and invitation %}
+                                <div class="mt-3">
+                                    {% if can_respond %}
+                                    <div class="d-flex gap-2">
+                                        <button type="button"
+                                                class="btn btn-sm btn-success"
+                                                onclick="acceptInvitation('{{ invitation.token }}', '{{ invitation.company.name }}')">
+                                            <i class="fas fa-check me-1"></i>پذیرش دعوت
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="rejectInvitation('{{ invitation.token }}', '{{ invitation.company.name }}')">
+                                            <i class="fas fa-times me-1"></i>رد دعوت
+                                        </button>
+                                    </div>
+                                    {% elif invitation.is_expired %}
+                                    <div class="alert alert-danger py-1 px-2 mb-0" style="font-size: 0.85rem;">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        دعوت‌نامه منقضی شده است
+                                    </div>
+                                    {% elif invitation.status != 'PENDING' %}
+                                    <div class="alert alert-info py-1 px-2 mb-0" style="font-size: 0.85rem;">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        دعوت قبلاً {% if invitation.status == 'ACCEPTED' %}پذیرفته{% else %}رد{% endif %} شده است
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-warning py-1 px-2 mb-0" style="font-size: 0.85rem;">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        این دعوت برای شما نیست
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="text-end">
+                                <small class="text-muted d-block">
+                                    {{ notification.created_at|date:"Y/m/d" }}
+                                </small>
+                                <small class="text-muted d-block">
+                                    {{ notification.created_at|time }}
+                                </small>
+                                {% if not notification.is_read %}
+                                <span class="badge bg-primary mt-1">جدید</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+
+                <!-- صفحه‌بندی -->
+                {% if page_obj.paginator.num_pages > 1 %}
+                <nav aria-label="صفحه‌بندی اعلان‌ها" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-bell-slash fa-4x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted mb-3">هیچ اعلانی ندارید</h5>
+                    <p class="text-muted">وقتی اتفاق جدیدی رخ دهد، اعلان‌ها اینجا نمایش داده می‌شوند</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ total_count }} اعلان
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="markAllAsRead()">
+                            <i class="fas fa-check-double me-1"></i>علامت‌گذاری همه به عنوان خوانده شده
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// پذیرش دعوت
+function acceptInvitation(token, companyName) {
+    if (confirm(`آیا از پذیرش دعوت به شرکت ${companyName} مطمئن هستید؟`)) {
+        fetch(`{% url 'hse:invitation_accept' 'TOKEN_PLACEHOLDER' %}`.replace('TOKEN_PLACEHOLDER', token), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('success', data.message || 'دعوت با موفقیت پذیرفته شد');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast('error', data.error || 'خطا در پذیرش دعوت');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'خطا در برقراری ارتباط با سرور');
+        });
+    }
+}
+
+// رد دعوت
+function rejectInvitation(token, companyName) {
+    if (confirm(`آیا از رد دعوت شرکت ${companyName} مطمئن هستید؟`)) {
+        fetch(`{% url 'hse:invitation_reject' 'TOKEN_PLACEHOLDER' %}`.replace('TOKEN_PLACEHOLDER', token), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('success', data.message || 'دعوت با موفقیت رد شد');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast('error', data.error || 'خطا در رد دعوت');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'خطا در برقراری ارتباط با سرور');
+        });
+    }
+}
+
+// علامت‌گذاری همه اعلان‌ها به عنوان خوانده شده
+function markAllAsRead() {
+    if (confirm('آیا می‌خواهید همه اعلان‌ها را به عنوان خوانده شده علامت بزنید؟')) {
+        fetch("{% url 'hse:mark_all_notifications_read' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showToast('error', 'خطا در بروزرسانی اعلان‌ها');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'خطا در برقراری ارتباط با سرور');
+        });
+    }
+}
+
+// نمایش toast
+function showToast(type, message) {
+    // اگر toastr موجود است استفاده کن
+    if (typeof toastr !== 'undefined') {
+        toastr[type](message);
+    } else {
+        // ایجاد toast ساده
+        const toastHtml = `
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
+                <div class="toast align-items-center text-bg-${type} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const container = document.createElement('div');
+        container.innerHTML = toastHtml;
+        document.body.appendChild(container);
+
+        const toastElement = container.querySelector('.toast');
+        const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+        toast.show();
+
+        toastElement.addEventListener('hidden.bs.toast', function () {
+            container.remove();
+        });
+    }
+}
+
+// تابع دریافت cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<style>
+.list-group-item-light {
+    background-color: #f8f9fa;
+    border-left: 3px solid #007bff;
+}
+
+.list-group-item {
+    border-left: 3px solid transparent;
+    transition: all 0.3s;
+}
+
+.list-group-item:hover {
+    background-color: #f1f3f4;
+}
+</style>
+{% endblock %}

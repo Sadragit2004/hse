@@ -1,0 +1,288 @@
+<!-- templates/hse/training/update.html -->
+{% extends 'base.html' %}
+
+{% block title %}ویرایش آموزش - {{ training.title }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:training_detail' company.id training.id %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت به جزئیات
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">ویرایش آموزش: {{ training.title }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="trainingForm">
+            {% csrf_token %}
+
+            <!-- اطلاعات اصلی -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h6 class="border-bottom pb-2 mb-3">اطلاعات اصلی آموزش</h6>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_title" class="form-label">
+                        عنوان آموزش
+                        <span class="text-danger">*</span>
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                    <div class="text-danger">
+                        {% for error in form.title.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_training_type" class="form-label">
+                        نوع آموزش
+                        <span class="text-danger">*</span>
+                    </label>
+                    {{ form.training_type }}
+                    {% if form.training_type.errors %}
+                    <div class="text-danger">
+                        {% for error in form.training_type.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="id_level" class="form-label">
+                        سطح آموزش
+                        <span class="text-danger">*</span>
+                    </label>
+                    {{ form.level }}
+                    {% if form.level.errors %}
+                    <div class="text-danger">
+                        {% for error in form.level.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="id_status" class="form-label">وضعیت</label>
+                    {{ form.status }}
+                    {% if form.status.errors %}
+                    <div class="text-danger">
+                        {% for error in form.status.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="id_department" class="form-label">بخش</label>
+                    {{ form.department }}
+                    {% if form.department.errors %}
+                    <div class="text-danger">
+                        {% for error in form.department.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label for="id_description" class="form-label">توضیحات</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <div class="text-danger">
+                        {% for error in form.description.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- زمان‌بندی -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h6 class="border-bottom pb-2 mb-3">زمان‌بندی آموزش</h6>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="scheduled_date" class="form-label">
+                        تاریخ و زمان برگزاری
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="datetime-local" id="scheduled_date"
+                           class="form-control {% if form.scheduled_date.errors %}is-invalid{% endif %}"
+                           value="{{ training.scheduled_date|date:'Y-m-d\\TH:i' }}">
+                    <input type="hidden" name="scheduled_date" id="id_scheduled_date"
+                           value="{{ training.scheduled_date|date:'Y-m-d\\TH:i' }}">
+                    {% if form.scheduled_date.errors %}
+                    <div class="text-danger">
+                        {% for error in form.scheduled_date.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="completion_date" class="form-label">تاریخ تکمیل (اختیاری)</label>
+                    <input type="datetime-local" id="completion_date"
+                           class="form-control {% if form.completion_date.errors %}is-invalid{% endif %}"
+                           value="{{ training.completion_date|date:'Y-m-d\\TH:i'|default:'' }}">
+                    <input type="hidden" name="completion_date" id="id_completion_date"
+                           value="{{ training.completion_date|date:'Y-m-d\\TH:i'|default:'' }}">
+                    {% if form.completion_date.errors %}
+                    <div class="text-danger">
+                        {% for error in form.completion_date.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_duration_minutes" class="form-label">
+                        مدت زمان آموزش (دقیقه)
+                        <span class="text-danger">*</span>
+                    </label>
+                    {{ form.duration_minutes }}
+                    {% if form.duration_minutes.errors %}
+                    <div class="text-danger">
+                        {% for error in form.duration_minutes.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- افراد -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h6 class="border-bottom pb-2 mb-3">افراد مرتبط</h6>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_instructor" class="form-label">مدرس</label>
+                    {{ form.instructor }}
+                    {% if form.instructor.errors %}
+                    <div class="text-danger">
+                        {% for error in form.instructor.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_participants" class="form-label">شرکت‌کنندگان</label>
+                    {{ form.participants }}
+                    <small class="form-text text-muted">برای انتخاب چند نفر، کلید Ctrl را نگه دارید.</small>
+                    {% if form.participants.errors %}
+                    <div class="text-danger">
+                        {% for error in form.participants.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- فایل‌ها -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h6 class="border-bottom pb-2 mb-3">فایل‌های آموزش</h6>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_video" class="form-label">فیلم آموزش</label>
+                    {{ form.video }}
+                    {% if training.video %}
+                    <div class="mt-2">
+                        <small class="text-muted">فایل فعلی: {{ training.video.name|slice:"-20:" }}</small>
+                        <br>
+                        <small><a href="{{ training.video.url }}" target="_blank">مشاهده فایل فعلی</a></small>
+                    </div>
+                    {% endif %}
+                    {% if form.video.errors %}
+                    <div class="text-danger">
+                        {% for error in form.video.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_attachment" class="form-label">ضمیمه</label>
+                    {{ form.attachment }}
+                    {% if training.attachment %}
+                    <div class="mt-2">
+                        <small class="text-muted">فایل فعلی: {{ training.attachment.name|slice:"-20:" }}</small>
+                        <br>
+                        <small><a href="{{ training.attachment.url }}" target="_blank">مشاهده فایل فعلی</a></small>
+                    </div>
+                    {% endif %}
+                    {% if form.attachment.errors %}
+                    <div class="text-danger">
+                        {% for error in form.attachment.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'hse:training_detail' company.id training.id %}" class="btn btn-secondary">
+                    انصراف
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>ذخیره تغییرات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scheduledInput = document.getElementById('scheduled_date');
+    const hiddenScheduled = document.getElementById('id_scheduled_date');
+    const completionInput = document.getElementById('completion_date');
+    const hiddenCompletion = document.getElementById('id_completion_date');
+    const form = document.getElementById('trainingForm');
+
+    // بروزرسانی فیلدهای مخفی
+    function updateDateTime() {
+        if (scheduledInput.value) {
+            hiddenScheduled.value = scheduledInput.value;
+        }
+        if (completionInput.value) {
+            hiddenCompletion.value = completionInput.value;
+        }
+    }
+
+    scheduledInput.addEventListener('change', updateDateTime);
+    completionInput.addEventListener('change', updateDateTime);
+
+    // اعتبارسنجی قبل از ارسال فرم
+    form.addEventListener('submit', function(event) {
+        updateDateTime();
+
+        if (!scheduledInput.value) {
+            event.preventDefault();
+            alert('لطفاً تاریخ و زمان برگزاری را وارد کنید.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

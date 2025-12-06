@@ -1,0 +1,101 @@
+<!-- templates/hse/company/member_add.html -->
+{% extends 'base.html' %}
+
+{% block title %}افزودن عضو جدید - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:member_list' company.id %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-plus text-primary me-2"></i>
+                    افزودن عضو جدید
+                </h5>
+                <small class="text-muted">در شرکت {{ company.name }}</small>
+            </div>
+
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <!-- کاربر -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">انتخاب کاربر *</label>
+                            <select name="user" class="form-select" required>
+                                <option value="">انتخاب کنید...</option>
+                                {% for user in available_users %}
+                                <option value="{{ user.id }}">
+                                    {{ user.get_full_name|default:user.mobileNumber }} - {{ user.mobileNumber }}
+                                    {% if user.email %} ({{ user.email }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if not available_users %}
+                            <div class="alert alert-warning mt-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                هیچ کاربری برای افزودن وجود ندارد.
+                                <a href="{% url 'hse:invitation_create' company.id %}" class="alert-link">
+                                    کاربر جدید دعوت کنید
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- سمت -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">سمت *</label>
+                            <select name="position" class="form-select" required>
+                                <option value="">انتخاب کنید...</option>
+                                <option value="WORKER">کارگر</option>
+                                <option value="OPERATOR">اپراتور</option>
+                                <option value="EXPERT">کارشناس</option>
+                                <option value="SUPERVISOR">ناظر</option>
+                                <option value="MANAGER">مدیر</option>
+                                <option value="OTHER">سایر</option>
+                            </select>
+                        </div>
+
+                        <!-- بخش -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">بخش (اختیاری)</label>
+                            <select name="department" class="form-select">
+                                <option value="">بدون بخش</option>
+                                {% for dept in company.departments.all %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- وضعیت -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">وضعیت *</label>
+                            <select name="status" class="form-select" required>
+                                <option value="ACTIVE" selected>فعال</option>
+                                <option value="INACTIVE">غیرفعال</option>
+                                <option value="SUSPENDED">تعلیق شده</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>ذخیره عضو
+                        </button>
+                        <a href="{% url 'hse:member_list' company.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>انصراف
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,475 @@
+<!-- templates/hse/training/detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}جزئیات آموزش - {{ training.title }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:training_list' company.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+    </a>
+    <a href="{% url 'hse:training_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>آموزش جدید
+    </a>
+    <a href="{% url 'hse:training_update' company.id training.id %}" class="btn btn-warning">
+        <i class="fas fa-edit me-2"></i>ویرایش
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ training.title }}</h5>
+                <div>
+                    <span class="badge {% if training.level == 'ADVANCED' %}bg-danger
+                                     {% elif training.level == 'INTERMEDIATE' %}bg-warning text-dark
+                                     {% else %}bg-success{% endif %} me-2">
+                        {{ training.get_level_display }}
+                    </span>
+                    <span class="badge {% if training.status == 'COMPLETED' %}bg-success
+                                     {% elif training.status == 'IN_PROGRESS' %}bg-warning text-dark
+                                     {% elif training.status == 'CANCELLED' %}bg-secondary
+                                     {% else %}bg-info{% endif %}">
+                        {{ training.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2">توضیحات آموزش</h6>
+                    <p>{{ training.description|linebreaksbr|default:"بدون توضیح" }}</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">اطلاعات آموزش</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">نوع آموزش:</th>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ training.get_training_type_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>بخش:</th>
+                                <td>{{ training.department.name|default:"کل شرکت" }}</td>
+                            </tr>
+                            <tr>
+                                <th>مدت زمان:</th>
+                                <td>{{ training.duration_minutes }} دقیقه</td>
+                            </tr>
+                            <tr>
+                                <th>مدرس:</th>
+                                <td>
+                                    {% if training.instructor %}
+                                    {{ training.instructor.user.full_name }}
+                                    {% else %}
+                                    <span class="text-muted">تعیین نشده</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>ایجاد کننده:</th>
+                                <td>{{ training.created_by.get_full_name|default:"-" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">زمان‌بندی</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">تاریخ برگزاری:</th>
+                                <td>{{ training.scheduled_date|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th>تاریخ تکمیل:</th>
+                                <td>
+                                    {% if training.completion_date %}
+                                    <span class="text-success">{{ training.completion_date|date:"Y/m/d - H:i" }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>تاریخ ایجاد:</th>
+                                <td>{{ training.created_at|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th>آخرین بروزرسانی:</th>
+                                <td>{{ training.updated_at|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- فایل‌ها -->
+                {% if training.video or training.attachment %}
+                <div class="mt-4">
+                    <h6 class="border-bottom pb-2">فایل‌های آموزشی</h6>
+                    <div class="row">
+                        {% if training.video %}
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary bg-opacity-10 py-2">
+                                    <h6 class="mb-0"><i class="fas fa-video me-2"></i>فیلم آموزش</h6>
+                                </div>
+                                <div class="card-body py-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-video fa-2x text-primary me-3"></i>
+                                        <div>
+                                            <a href="{{ training.video.url }}" class="text-decoration-none d-block">
+                                                دانلود فیلم
+                                            </a>
+                                            <small class="text-muted">{{ training.video.name|slice:"-20:" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if training.attachment %}
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info bg-opacity-10 py-2">
+                                    <h6 class="mb-0"><i class="fas fa-paperclip me-2"></i>ضمیمه</h6>
+                                </div>
+                                <div class="card-body py-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-pdf fa-2x text-danger me-3"></i>
+                                        <div>
+                                            <a href="{{ training.attachment.url }}" class="text-decoration-none d-block">
+                                                دانلود ضمیمه
+                                            </a>
+                                            <small class="text-muted">{{ training.attachment.name|slice:"-20:" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- شرکت‌کنندگان -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-users me-2"></i>شرکت‌کنندگان ({{ participants.count }})</h6>
+            </div>
+            <div class="card-body">
+                {% if participants %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>نام</th>
+                                <th>بخش</th>
+                                <th>سمت</th>
+                                <th>وضعیت حضور</th>
+                                <th>امتیاز</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in participation_records %}
+                            <tr>
+                                <td>{{ record.participant.user.full_name }}</td>
+                                <td>{{ record.participant.department.name|default:"-" }}</td>
+                                <td>{{ record.participant.get_position_display }}</td>
+                                <td>
+                                    {% if record.attendance_status == 'ATTENDED' %}
+                                    <span class="badge bg-success">حاضر شده</span>
+                                    {% elif record.attendance_status == 'ABSENT' %}
+                                    <span class="badge bg-danger">غایب</span>
+                                    {% elif record.attendance_status == 'EXCUSED' %}
+                                    <span class="badge bg-warning">معذور</span>
+                                    {% else %}
+                                    <span class="badge bg-info">ثبت‌نام شده</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.participant_rating %}
+                                    <span class="badge bg-primary">{{ record.participant_rating }}/5</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                            data-bs-toggle="modal" data-bs-target="#updateParticipationModal{{ record.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Modal برای ویرایش حضور -->
+                            <div class="modal fade" id="updateParticipationModal{{ record.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">ویرایش حضور {{ record.participant.user.full_name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'hse:training_update_participation' company.id training.id record.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">وضعیت حضور:</label>
+                                                    <select name="attendance_status" class="form-select">
+                                                        <option value="REGISTERED" {% if record.attendance_status == 'REGISTERED' %}selected{% endif %}>ثبت‌نام شده</option>
+                                                        <option value="ATTENDED" {% if record.attendance_status == 'ATTENDED' %}selected{% endif %}>حاضر شده</option>
+                                                        <option value="ABSENT" {% if record.attendance_status == 'ABSENT' %}selected{% endif %}>غایب</option>
+                                                        <option value="EXCUSED" {% if record.attendance_status == 'EXCUSED' %}selected{% endif %}>معذور</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">امتیاز (1-5):</label>
+                                                    <input type="number" name="rating" class="form-control"
+                                                           min="1" max="5"
+                                                           value="{{ record.participant_rating|default:'' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">نمره آزمون:</label>
+                                                    <input type="number" name="test_score" class="form-control"
+                                                           min="0" max="100"
+                                                           value="{{ record.test_score|default:'' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">نظر:</label>
+                                                    <textarea name="feedback" class="form-control" rows="3">{{ record.participant_feedback|default:'' }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                                <button type="submit" class="btn btn-primary">ذخیره</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-3">هیچ شرکت‌کننده‌ای ثبت‌نام نشده است.</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addParticipantModal">
+                        <i class="fas fa-user-plus me-2"></i>افزودن شرکت‌کننده
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- تغییر وضعیت -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-sync-alt me-2"></i>تغییر وضعیت</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'hse:training_update_status' company.id training.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">وضعیت جدید:</label>
+                        <select name="status" class="form-select">
+                            <option value="PLANNED" {% if training.status == 'PLANNED' %}selected{% endif %}>برنامه‌ریزی شده</option>
+                            <option value="IN_PROGRESS" {% if training.status == 'IN_PROGRESS' %}selected{% endif %}>در حال اجرا</option>
+                            <option value="COMPLETED" {% if training.status == 'COMPLETED' %}selected{% endif %}>تکمیل شده</option>
+                            <option value="CANCELLED" {% if training.status == 'CANCELLED' %}selected{% endif %}>لغو شده</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>ذخیره تغییرات
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- آمار و اطلاعات -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-chart-bar me-2"></i>آمار آموزش</h6>
+            </div>
+            <div class="card-body">
+                {% comment %} محاسبه آمار به صورت ساده {% endcomment %}
+                {% with attended_count=0 absent_count=0 rating_sum=0 rating_count=0 %}
+                    {% for record in participation_records %}
+                        {% if record.attendance_status == 'ATTENDED' %}
+                            {% with attended_count=attended_count|add:1 %}
+                            {% endwith %}
+                        {% elif record.attendance_status == 'ABSENT' %}
+                            {% with absent_count=absent_count|add:1 %}
+                            {% endwith %}
+                        {% endif %}
+                        {% if record.participant_rating %}
+                            {% with rating_sum=rating_sum|add:record.participant_rating rating_count=rating_count|add:1 %}
+                            {% endwith %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>تعداد شرکت‌کنندگان:</span>
+                        <strong>{{ participants.count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>حاضرین:</span>
+                        <strong class="text-success">{{ attended_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>غایبین:</span>
+                        <strong class="text-danger">{{ absent_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>میانگین امتیاز:</span>
+                        <strong>
+                            {% if rating_count > 0 %}
+                                {{ rating_sum|floatformat:1 }}/5
+                            {% else %}
+                                -
+                            {% endif %}
+                        </strong>
+                    </div>
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- عملیات سریع -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>عملیات سریع</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if training.status != 'COMPLETED' %}
+                    <form method="post" action="{% url 'hse:training_update_status' company.id training.id %}" class="d-grid">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="COMPLETED">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>تکمیل آموزش
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addParticipantModal">
+                        <i class="fas fa-user-plus me-2"></i>افزودن شرکت‌کننده
+                    </button>
+
+                    <a href="{% url 'hse:training_update' company.id training.id %}" class="btn btn-outline-warning">
+                        <i class="fas fa-edit me-2"></i>ویرایش آموزش
+                    </a>
+
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash me-2"></i>حذف آموزش
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal افزودن شرکت‌کننده -->
+<div class="modal fade" id="addParticipantModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">افزودن شرکت‌کننده</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'hse:training_register_participant' company.id training.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">انتخاب شرکت‌کننده:</label>
+                        <select name="participant_id" class="form-select" required>
+                            <option value="">انتخاب کنید</option>
+                            {% for member in members %}
+                                {% if member not in participants %}
+                                <option value="{{ member.id }}">
+                                    {{ member.user.full_name }} ({{ member.department.name|default:"-" }})
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary">افزودن</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تایید حذف -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">تایید حذف آموزش</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    آیا از حذف آموزش "{{ training.title }}" اطمینان دارید؟
+                    <br>
+                    <small class="text-muted">این عمل قابل بازگشت نیست.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <form method="post" action="{% url 'hse:training_delete' company.id training.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">حذف آموزش</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// JavaScript برای مدیریت فرم‌ها و Modalها
+document.addEventListener('DOMContentLoaded', function() {
+    // محاسبه آمار با JavaScript
+    function calculateStats() {
+        let attendedCount = 0;
+        let absentCount = 0;
+        let ratingSum = 0;
+        let ratingCount = 0;
+
+        // این بخش می‌تواند از طریق AJAX هم پیاده‌سازی شود
+        // فعلاً فقط نمایش می‌دهیم
+        console.log('آمار محاسبه شد');
+    }
+
+    calculateStats();
+
+    // جلوگیری از ارسال مجدد فرم
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>در حال پردازش...';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

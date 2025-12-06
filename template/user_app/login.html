@@ -1,0 +1,56 @@
+{% extends "account_template.html" %}
+
+{% block content %}
+<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8 bg-black min-h-screen">
+  <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+    <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500" alt="Your Company" class="mx-auto h-10 w-auto" />
+    <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">ورود با شماره موبایل</h2>
+  </div>
+
+  <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+    <form method="POST" class="space-y-6">
+      {% csrf_token %}
+
+      <div>
+        <label for="mobileNumber" class="block text-sm/6 font-medium text-white text-right">شماره موبایل</label>
+        <div class="mt-2">
+          <input
+            id="mobileNumber"
+            type="text"
+            name="mobileNumber"
+            required
+            maxlength="11"
+            minlength="11"
+            class="block w-full rounded-md bg-gray-900 px-3 py-1.5 text-base text-white border border-gray-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6 text-right"
+            placeholder="شماره موبایل خود را وارد کنید"
+            value="{{ form.mobileNumber.value|default:'' }}"
+          />
+          {% if form.mobileNumber.errors %}
+            <div class="mt-2 text-right">
+              {% for error in form.mobileNumber.errors %}
+                <p class="text-sm text-red-500">{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+          دریافت کد تأیید
+        </button>
+      </div>
+    </form>
+
+    {% if messages %}
+      <div class="mt-4 text-right">
+        {% for message in messages %}
+          <p class="text-sm {% if message.tags == 'error' %}text-red-500{% else %}text-green-500{% endif %}">
+            {{ message }}
+          </p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,380 @@
+<!-- templates/hse/company/create.html -->
+{% extends 'base.html' %}
+
+{% block title %}ایجاد شرکت جدید{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:company_list' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-building text-primary me-2"></i>
+                    ایجاد شرکت جدید
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <form method="post" id="companyForm" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <!-- نام شرکت -->
+                        <div class="col-md-12 mb-3">
+                            <label for="companyName" class="form-label">
+                                <i class="fas fa-signature me-1"></i>
+                                نام شرکت *
+                            </label>
+                            <input type="text" name="name" id="companyName"
+                                   class="form-control" placeholder="نام شرکت"
+                                   value="{{ form.name.value|default:'' }}"
+                                   required>
+                            <div class="form-text text-muted">
+                                نام کامل و رسمی شرکت را وارد کنید
+                            </div>
+                            <div class="invalid-feedback" id="nameError"></div>
+                        </div>
+
+                        <!-- حوزه فعالیت -->
+                        <div class="col-md-12 mb-3">
+                            <label for="activityField" class="form-label">
+                                <i class="fas fa-industry me-1"></i>
+                                حوزه فعالیت *
+                            </label>
+                            <select name="activity_field" id="activityField"
+                                   class="form-select" required>
+                                <option value="">انتخاب کنید...</option>
+                                <option value="ساختمانی">ساختمانی</option>
+                                <option value="پتروشیمی">پتروشیمی</option>
+                                <option value="صنعتی">صنعتی</option>
+                                <option value="معدنی">معدنی</option>
+                                <option value="نفت و گاز">نفت و گاز</option>
+                                <option value="خدماتی">خدماتی</option>
+                                <option value="تولیدی">تولیدی</option>
+                                <option value="کشاورزی">کشاورزی</option>
+                                <option value="حمل و نقل">حمل و نقل</option>
+                                <option value="سایر">سایر</option>
+                            </select>
+                            <div class="form-text text-muted">
+                                حوزه اصلی فعالیت شرکت را انتخاب کنید
+                            </div>
+                            <div class="invalid-feedback" id="activityError"></div>
+
+                            <!-- برای سایر -->
+                            <div class="mt-2" id="otherField" style="display: none;">
+                                <input type="text" name="other_activity"
+                                       class="form-control" placeholder="ذکر سایر حوزه فعالیت">
+                            </div>
+                        </div>
+
+                        <!-- وضعیت فعال -->
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="is_active"
+                                       class="form-check-input" id="isActive" checked>
+                                <label class="form-check-label" for="isActive">
+                                    <i class="fas fa-power-on me-1"></i>
+                                    شرکت فعال باشد
+                                </label>
+                            </div>
+                            <div class="form-text text-muted">
+                                می‌توانید بعداً وضعیت را تغییر دهید
+                            </div>
+                        </div>
+
+                        <!-- توضیحات اضافی -->
+                        <div class="col-md-12 mb-3">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-file-alt me-1"></i>
+                                توضیحات (اختیاری)
+                            </label>
+                            <textarea name="description" id="description"
+                                     class="form-control" rows="3"
+                                     placeholder="توضیحات بیشتر درباره شرکت...">{{ form.description.value|default:'' }}</textarea>
+                            <div class="form-text text-muted">
+                                اطلاعات تکمیلی مانند آدرس، شماره تماس، تاریخ تاسیس و ...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌ها -->
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <div>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>
+                                <span id="submitText">ذخیره شرکت</span>
+                                <span id="loadingSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                            </button>
+                            <a href="{% url 'hse:company_list' %}" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-times me-2"></i>انصراف
+                            </a>
+                        </div>
+
+                        <div class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            همه فیلدهای * دار الزامی هستند
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- پنل راهنما -->
+    <div class="col-md-4">
+        <!-- آمار -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar text-success me-2"></i>
+                    آمار شما
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-3 bg-light">
+                            <div class="text-primary fw-bold h4 mb-1">{{ user_companies_count|default:0 }}</div>
+                            <small class="text-muted">شرکت‌ها</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-3 bg-light">
+                            <div class="text-success fw-bold h4 mb-1">{{ active_companies_count|default:0 }}</div>
+                            <small class="text-muted">فعال</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- راهنما -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-question-circle text-info me-2"></i>
+                    راهنمای ایجاد شرکت
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-lightbulb me-2"></i>نکات مهم:</h6>
+                    <ul class="mb-0 ps-3 small">
+                        <li>نام شرکت باید منحصر به فرد باشد</li>
+                        <li>حوزه فعالیت بر اساس شاخص‌های HSE انتخاب شود</li>
+                        <li>می‌توانید بعداً بخش‌ها و اعضا اضافه کنید</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>توجه:</h6>
+                    <p class="mb-0 small">
+                        پس از ایجاد شرکت، می‌توانید از طریق منوی شرکت،
+                        بخش‌ها، اعضا، بازرسی‌ها و حوادث را مدیریت کنید.
+                    </p>
+                </div>
+
+                <div class="text-center mt-3">
+                    <i class="fas fa-building fa-3x text-muted opacity-50"></i>
+                    <p class="text-muted small mt-2">
+                        هر شرکت یک واحد سازمانی مستقل در سیستم HSE است
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // نمایش/پنهان فیلد "سایر"
+    $('#activityField').change(function() {
+        if ($(this).val() === 'سایر') {
+            $('#otherField').slideDown();
+        } else {
+            $('#otherField').slideUp();
+        }
+    });
+
+    // اعتبارسنجی فرم
+    $('#companyForm').submit(function(e) {
+        e.preventDefault();
+
+        // ریست خطاها
+        $('.form-control').removeClass('is-invalid');
+        $('.invalid-feedback').empty();
+
+        let isValid = true;
+        const formData = new FormData(this);
+
+        // اعتبارسنجی نام شرکت
+        const companyName = $('#companyName').val().trim();
+        if (!companyName) {
+            showError('companyName', 'نام شرکت الزامی است');
+            isValid = false;
+        } else if (companyName.length < 3) {
+            showError('companyName', 'نام شرکت باید حداقل ۳ حرف باشد');
+            isValid = false;
+        }
+
+        // اعتبارسنجی حوزه فعالیت
+        const activityField = $('#activityField').val();
+        if (!activityField) {
+            showError('activityField', 'حوزه فعالیت الزامی است');
+            isValid = false;
+        }
+
+        if (isValid) {
+            // نمایش loading
+            $('#submitText').text('در حال ذخیره...');
+            $('#loadingSpinner').show();
+
+            // ارسال فرم با AJAX
+            $.ajax({
+                url: $(this).attr('action') || window.location.href,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(response) {
+                    if (response.redirect) {
+                        // ریدایرکت به صفحه شرکت
+                        window.location.href = response.redirect;
+                    } else if (response.success) {
+                        showToast('success', 'شرکت با موفقیت ایجاد شد');
+                        setTimeout(() => {
+                            window.location.href = "{% url 'hse:company_list' %}";
+                        }, 1500);
+                    }
+                },
+                error: function(xhr) {
+                    $('#submitText').text('ذخیره شرکت');
+                    $('#loadingSpinner').hide();
+
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        // نمایش خطاهای سرور
+                        const errors = xhr.responseJSON.errors;
+                        for (const field in errors) {
+                            showError(field, errors[field][0]);
+                        }
+                    } else {
+                        showToast('error', 'خطا در ایجاد شرکت');
+                    }
+                }
+            });
+        }
+
+        return false;
+    });
+
+    // توابع کمکی
+    function showError(fieldId, message) {
+        const element = $('#' + fieldId);
+        element.addClass('is-invalid');
+        $('#' + fieldId + 'Error').text(message);
+        element.focus();
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showToast(type, message) {
+        // ایجاد toast
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        // اضافه کردن toast به container
+        if (!$('.toast-container').length) {
+            $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+        }
+
+        $('.toast-container').append(toastHtml);
+
+        // نمایش toast
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+
+        // حذف toast بعد از 5 ثانیه
+        setTimeout(() => {
+            $(`#${toastId}`).remove();
+        }, 5000);
+    }
+
+    // فوکوس روی اولین فیلد
+    $('#companyName').focus();
+});
+</script>
+
+<style>
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #4361ee;
+    border-color: #4361ee;
+}
+
+.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+}
+
+.invalid-feedback {
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.stat-card {
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+    text-align: center;
+}
+
+.card-header {
+    background-color: rgba(0,0,0,0.02);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

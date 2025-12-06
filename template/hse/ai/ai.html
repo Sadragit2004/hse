@@ -1,0 +1,652 @@
+<!-- templates/hse/ai/ai.html -->
+{% extends 'base.html' %}
+
+{% block title %}دستیار هوشمند HSE{% endblock %}
+
+{% block page_actions %}
+<button type="button" class="btn btn-outline-secondary" id="clearChatBtn">
+    <i class="fas fa-trash-alt me-2"></i>پاک کردن گفتگو
+</button>
+<button type="button" class="btn btn-outline-primary" id="newChatBtn">
+    <i class="fas fa-plus me-2"></i>گفتگوی جدید
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="row">
+        <!-- پنل سمت چپ برای مثال‌ها و راهنما -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>راهنمای استفاده</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-primary">💡 مثال‌های کاربردی:</h6>
+                        <div class="list-group list-group-flush">
+                            <button type="button" class="list-group-item list-group-item-action example-question" data-question="چگونه یک بازرسی جدید ایجاد کنم؟">
+                                <small>چگونه یک بازرسی جدید ایجاد کنم؟</small>
+                            </button>
+                            <button type="button" class="list-group-item list-group-item-action example-question" data-question="گزارش حوادث این هفته را نشان بده">
+                                <small>گزارش حوادث این هفته را نشان بده</small>
+                            </button>
+                            <button type="button" class="list-group-item list-group-item-action example-question" data-question="آموزش‌های در حال انجام کدام‌اند؟">
+                                <small>آموزش‌های در حال انجام کدام‌اند؟</small>
+                            </button>
+                            <button type="button" class="list-group-item list-group-item-action example-question" data-question="وظایف معوقه امروز را لیست کن">
+                                <small>وظایف معوقه امروز را لیست کن</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-primary">🔧 دستورات سریع:</h6>
+                        <div class="d-flex flex-wrap gap-1">
+                            <span class="badge bg-info cursor-pointer quick-action" data-action="inspections">بازرسی‌ها</span>
+                            <span class="badge bg-warning cursor-pointer quick-action" data-action="incidents">حوادث</span>
+                            <span class="badge bg-success cursor-pointer quick-action" data-action="trainings">آموزش‌ها</span>
+                            <span class="badge bg-danger cursor-pointer quick-action" data-action="tasks">وظایف</span>
+                            <span class="badge bg-primary cursor-pointer quick-action" data-action="reports">گزارش‌ها</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6 class="text-primary">📊 دستیار شما می‌تواند:</h6>
+                        <ul class="list-unstyled small">
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>ایجاد رکوردهای جدید</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>نمایش گزارش‌ها</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>جستجوی اطلاعات</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>تحلیل داده‌ها</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>پاسخ به سوالات HSE</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسمت اصلی چت -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="mb-0">
+                                <i class="fas fa-robot me-2"></i>دستیار هوشمند HSE
+                                <small class="d-block mt-1 fs-6 opacity-75">هر سوالی در زمینه ایمنی، بهداشت و محیط زیست دارید بپرسید</small>
+                            </h5>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-light text-primary me-2" id="statusIndicator">
+                                <i class="fas fa-circle text-success me-1"></i>آنلاین
+                            </span>
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" id="exportChatBtn"><i class="fas fa-download me-2"></i>ذخیره گفتگو</a></li>
+                                    <li><a class="dropdown-item" href="#" id="toggleSoundBtn"><i class="fas fa-volume-up me-2"></i>صدا</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" id="helpBtn"><i class="fas fa-question-circle me-2"></i>راهنما</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ناحیه چت -->
+                <div class="card-body chat-body p-0">
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- پیام خوشامدگویی -->
+                        <div class="chat-message ai-message">
+                            <div class="message-avatar">
+                                <div class="avatar ai-avatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-header">
+                                    <strong>دستیار HSE</strong>
+                                    <small class="text-muted ms-2">همین الان</small>
+                                </div>
+                                <div class="message-text">
+                                    سلام! 👋 من دستیار هوشمند HSE شما هستم.
+                                    <br>
+                                    می‌تونم در زمینه‌های زیر کمکتون کنم:
+                                    <br><br>
+                                    • <strong>بازرسی‌ها و ممیزی‌ها</strong>
+                                    • <strong>ثبت و مدیریت حوادث</strong>
+                                    • <strong>برنامه‌ریزی آموزش‌ها</strong>
+                                    • <strong>پیگیری وظایف</strong>
+                                    • <strong>تهیه گزارش‌های HSE</strong>
+                                    <br><br>
+                                    چه کاری براتون انجام بدم؟
+                                </div>
+                                <div class="message-actions mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-2 quick-question" data-question="آموزش جدید ایجاد کن">
+                                        <i class="fas fa-graduation-cap me-1"></i>آموزش جدید
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning me-2 quick-question" data-question="بازرسی امروز را نشان بده">
+                                        <i class="fas fa-clipboard-check me-1"></i>بازرسی امروز
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger quick-question" data-question="آمار حوادث این ماه">
+                                        <i class="fas fa-chart-line me-1"></i>آمار حوادث
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ناحیه ورود پیام -->
+                <div class="card-footer">
+                    <form id="chatForm">
+                        <div class="input-group">
+                            <textarea class="form-control" id="messageInput"
+                                      placeholder="پیام خود را اینجا تایپ کنید... (برای ارسال Enter + Shift را فشار دهید)"
+                                      rows="2" style="resize: none;"></textarea>
+                            <button class="btn btn-primary" type="submit" id="sendBtn">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="voiceInputToggle">
+                                <label class="form-check-label small" for="voiceInputToggle">
+                                    <i class="fas fa-microphone me-1"></i>ورود صوتی
+                                </label>
+                            </div>
+                            <div class="small text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <span id="typingIndicator" class="d-none">
+                                    <span class="typing-dots">
+                                        <span>.</span><span>.</span><span>.</span>
+                                    </span>
+                                    دستیار در حال تایپ است
+                                </span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- پنل پایین برای اطلاعات اضافی -->
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="card bg-light border">
+                        <div class="card-body py-2">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-bolt text-warning fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">وضعیت سیستم</small>
+                                    <strong>همه سرویس‌ها فعال</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light border">
+                        <div class="card-body py-2">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-database text-info fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">داده‌های امروز</small>
+                                    <strong>۳۲ مورد جدید</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light border">
+                        <div class="card-body py-2">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-clock text-success fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">پاسخ‌گویی</small>
+                                    <strong>کمتر از ۵ ثانیه</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-container {
+    height: calc(100vh - 180px);
+}
+
+.chat-body {
+    height: 500px;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.chat-messages {
+    padding: 20px;
+    min-height: 100%;
+}
+
+.chat-message {
+    display: flex;
+    margin-bottom: 20px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.user-message {
+    flex-direction: row-reverse;
+}
+
+.ai-message {
+    flex-direction: row;
+}
+
+.message-avatar {
+    flex-shrink: 0;
+    margin: 0 10px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.user-avatar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.ai-avatar {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.user-message .message-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.ai-message .message-content {
+    background: white;
+    color: #333;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.user-message .message-header {
+    justify-content: flex-end;
+}
+
+.message-text {
+    line-height: 1.5;
+}
+
+.message-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.typing-dots span {
+    animation: typing 1.4s infinite;
+    opacity: 0.6;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.quick-action:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s;
+}
+
+.example-question:hover {
+    background-color: #f8f9fa;
+    border-left: 3px solid #667eea;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const chatForm = document.getElementById('chatForm');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+    const newChatBtn = document.getElementById('newChatBtn');
+
+    // اسکرول به پایین چت
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // اضافه کردن پیام کاربر
+    function addUserMessage(text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message user-message';
+        messageDiv.innerHTML = `
+            <div class="message-avatar">
+                <div class="avatar user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="message-content">
+                <div class="message-header">
+                    <strong>شما</strong>
+                    <small class="text-muted ms-2">${new Date().toLocaleTimeString('fa-IR')}</small>
+                </div>
+                <div class="message-text">${text}</div>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // اضافه کردن پیام دستیار
+    function addAiMessage(text, actions = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message ai-message';
+
+        let actionsHtml = '';
+        if (actions) {
+            actionsHtml = `<div class="message-actions mt-2">${actions}</div>`;
+        }
+
+        messageDiv.innerHTML = `
+            <div class="message-avatar">
+                <div class="avatar ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+            </div>
+            <div class="message-content">
+                <div class="message-header">
+                    <strong>دستیار HSE</strong>
+                    <small class="text-muted ms-2">${new Date().toLocaleTimeString('fa-IR')}</small>
+                </div>
+                <div class="message-text">${text}</div>
+                ${actionsHtml}
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // شبیه‌سازی تایپ دستیار
+    function simulateTyping(duration = 1000) {
+        typingIndicator.classList.remove('d-none');
+        return new Promise(resolve => {
+            setTimeout(() => {
+                typingIndicator.classList.add('d-none');
+                resolve();
+            }, duration);
+        });
+    }
+
+    // پردازش سوال و تولید پاسخ
+    async function processQuestion(question) {
+        // اضافه کردن پیام کاربر
+        addUserMessage(question);
+
+        // شبیه‌سازی تایپ
+        await simulateTyping(1500);
+
+        // تولید پاسخ بر اساس سوال
+        let response = '';
+        let actions = null;
+
+        question = question.toLowerCase();
+
+        if (question.includes('سلام') || question.includes('hi') || question.includes('hello')) {
+            response = `سلام! 👋 خوش آمدید. چه کاری می‌توانم برای شما انجام دهم؟`;
+            actions = `
+                <button type="button" class="btn btn-sm btn-outline-primary me-2 quick-question" data-question="چگونه گزارش ایجاد کنم">
+                    <i class="fas fa-file-alt me-1"></i>ایجاد گزارش
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success me-2 quick-question" data-question="آمار امروز">
+                    <i class="fas fa-chart-bar me-1"></i>آمار امروز
+                </button>
+            `;
+        }
+        else if (question.includes('بازرسی') || question.includes('inspection')) {
+            if (question.includes('جدید') || question.includes('ایجاد')) {
+                response = `برای ایجاد بازرسی جدید می‌توانید از منوی "بازرسی‌ها" ➡️ "ایجاد بازرسی جدید" اقدام کنید.`;
+                actions = `
+                    <button type="button" class="btn btn-sm btn-primary me-2" onclick="window.location.href='#'">
+                        <i class="fas fa-plus me-1"></i>ایجاد بازرسی
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.location.href='#'">
+                        <i class="fas fa-list me-1"></i>مشاهده لیست
+                    </button>
+                `;
+            } else {
+                response = `📋 <strong>بازرسی‌های امروز:</strong><br>
+                • ۳ بازرسی برنامه‌ریزی شده<br>
+                • ۲ بازرسی در حال انجام<br>
+                • ۱ بازرسی تکمیل شده<br><br>
+                برای مشاهده جزئیات بیشتر:`;
+                actions = `
+                    <button type="button" class="btn btn-sm btn-primary me-2" onclick="window.location.href='#'">
+                        <i class="fas fa-eye me-1"></i>مشاهده همه
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary quick-question" data-question="بازرسی معوقه">
+                        <i class="fas fa-exclamation-triangle me-1"></i>بازرسی‌های معوقه
+                    </button>
+                `;
+            }
+        }
+        else if (question.includes('حادثه') || question.includes('incident')) {
+            response = `⚠️ <strong>آمار حوادث این ماه:</strong><br>
+            • کل حوادث: ۱۲ مورد<br>
+            • حوادث شدید: ۲ مورد<br>
+            • شبه حوادث: ۸ مورد<br>
+            • حوادث جزئی: ۲ مورد<br><br>
+            می‌خواهید چه کاری انجام دهم؟`;
+            actions = `
+                <button type="button" class="btn btn-sm btn-danger me-2" onclick="window.location.href='#'">
+                    <i class="fas fa-plus me-1"></i>ثبت حادثه جدید
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="window.location.href='#'">
+                    <i class="fas fa-chart-line me-1"></i>گزارش آماری
+                </button>
+            `;
+        }
+        else if (question.includes('آموزش') || question.includes('training')) {
+            response = `🎓 <strong>اطلاعات آموزش‌ها:</strong><br>
+            • ۵ آموزش برنامه‌ریزی شده<br>
+            • ۳ آموزش در حال برگزاری<br>
+            • ۸ آموزش تکمیل شده این ماه<br><br>
+            برای مدیریت آموزش‌ها:`;
+            actions = `
+                <button type="button" class="btn btn-sm btn-success me-2" onclick="window.location.href='#'">
+                    <i class="fas fa-graduation-cap me-1"></i>آموزش جدید
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="window.location.href='#'">
+                    <i class="fas fa-list me-1"></i>لیست آموزش‌ها
+                </button>
+            `;
+        }
+        else if (question.includes('وظیفه') || question.includes('task')) {
+            response = `✅ <strong>وظایف امروز:</strong><br>
+            • ۵ وظیفه در انتظار<br>
+            • ۳ وظیفه در حال انجام<br>
+            • ۲ وظیفه معوقه<br><br>
+            اقدامات سریع:`;
+            actions = `
+                <button type="button" class="btn btn-sm btn-warning me-2" onclick="window.location.href='#'">
+                    <i class="fas fa-tasks me-1"></i>وظیفه جدید
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning" onclick="window.location.href='#'">
+                    <i class="fas fa-calendar me-1"></i>برنامه‌ریزی
+                </button>
+            `;
+        }
+        else if (question.includes('گزارش') || question.includes('report')) {
+            response = `📊 <strong>گزارش‌های HSE:</strong><br>
+            • گزارش ماهانه ایمنی<br>
+            • گزارش فصلی محیط زیست<br>
+            • گزارش سالانه بهداشت<br>
+            • گزارش حوادث هفتگی<br><br>
+            برای دسترسی به گزارش‌ها:`;
+            actions = `
+                <button type="button" class="btn btn-sm btn-info me-2" onclick="window.location.href='#'">
+                    <i class="fas fa-file-medical me-1"></i>گزارش جدید
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="window.location.href='#'">
+                    <i class="fas fa-archive me-1"></i>آرشیو گزارش‌ها
+                </button>
+            `;
+        }
+        else {
+            response = `سوال شما را متوجه شدم. در حال حاضر می‌توانم در زمینه‌های زیر کمک کنم:<br><br>
+            • <strong>مدیریت بازرسی‌ها و ممیزی‌ها</strong><br>
+            • <strong>ثبت و پیگیری حوادث</strong><br>
+            • <strong>برنامه‌ریزی و مدیریت آموزش‌ها</strong><br>
+            • <strong>ایجاد و پیگیری وظایف</strong><br>
+            • <strong>تهیه گزارش‌های HSE</strong><br><br>
+            لطفاً سوال خود را دقیق‌تر مطرح کنید.`;
+            actions = `
+                <button type="button" class="btn btn-sm btn-outline-primary me-2 quick-question" data-question="چگونه حادثه ثبت کنم">
+                    <i class="fas fa-exclamation-triangle me-1"></i>ثبت حادثه
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success quick-question" data-question="آموزش جدید ایجاد کن">
+                    <i class="fas fa-graduation-cap me-1"></i>آموزش جدید
+                </button>
+            `;
+        }
+
+        // اضافه کردن پاسخ دستیار
+        addAiMessage(response, actions);
+    }
+
+    // ارسال فرم
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+
+        if (message) {
+            processQuestion(message);
+            messageInput.value = '';
+            messageInput.focus();
+        }
+    });
+
+    // مدیریت Enter + Shift برای ارسال
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // دکمه‌های سوال سریع
+    document.querySelectorAll('.example-question, .quick-question').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const question = this.dataset.question;
+            messageInput.value = question;
+            chatForm.dispatchEvent(new Event('submit'));
+        });
+    });
+
+    // دکمه‌های اقدام سریع
+    document.querySelectorAll('.quick-action').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = this.dataset.action;
+            let question = '';
+
+            switch(action) {
+                case 'inspections':
+                    question = 'بازرسی‌های امروز را نشان بده';
+                    break;
+                case 'incidents':
+                    question = 'آخرین حوادث ثبت شده';
+                    break;
+                case 'trainings':
+                    question = 'آموزش‌های در حال برگزاری';
+                    break;
+                case 'tasks':
+                    question = 'وظایف معوقه امروز';
+                    break;
+                case 'reports':
+                    question = 'گزارش ماهانه HSE';
+                    break;
+            }
+
+            messageInput.value = question;
+            chatForm.dispatchEvent(new Event('submit'));
+        });
+    });
+
+    // پاک کردن چت
+    clearChatBtn.addEventListener('click', function() {
+        if (confirm('آیا از پاک کردن تمام گفتگو اطمینان دارید؟')) {
+            chatMessages.innerHTML = '';
+            // اضافه کردن پیام خوشامدگویی مجدد
+            addAiMessage(`گفتگو پاک شد. سلام مجدد! 👋 من دستیار هوشمند HSE شما هستم. چه کاری می‌توانم برای شما انجام دهم؟`);
+        }
+    });
+
+    // گفتگوی جدید
+    newChatBtn.addEventListener('click', function() {
+        chatMessages.innerHTML = '';
+        addAiMessage(`گفتگوی جدید شروع شد. سلام! 👋 من دستیار هوشمند HSE شما هستم. چه کاری می‌توانم برای شما انجام دهم؟`);
+    });
+
+    // اسکرول اولیه به پایین
+    scrollToBottom();
+
+    // فوکوس روی فیلد ورودی
+    messageInput.focus();
+});
+</script>
+{% endblock %}

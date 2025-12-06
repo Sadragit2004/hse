@@ -1,0 +1,226 @@
+<!-- templates/hse/department/edit.html -->
+{% extends 'base.html' %}
+
+{% block title %}ویرایش بخش {{ department.name }} - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:department_list' company.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-2"></i>بازگشت
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit text-warning me-2"></i>
+                    ویرایش بخش {{ department.name }}
+                </h5>
+                <small class="text-muted">در شرکت {{ company.name }}</small>
+            </div>
+
+            <div class="card-body">
+                <form method="post" id="editDepartmentForm" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <!-- نام بخش -->
+                        <div class="col-md-12 mb-3">
+                            <label for="editName" class="form-label">نام بخش *</label>
+                            <input type="text" name="name" id="editName"
+                                   class="form-control"
+                                   value="{{ form.name.value|default:department.name }}"
+                                   required>
+                            <div class="invalid-feedback" id="nameError"></div>
+                        </div>
+
+                        <!-- تعداد کارکنان -->
+                        <div class="col-md-6 mb-3">
+                            <label for="editEmployeeCount" class="form-label">تعداد کارکنان *</label>
+                            <input type="number" name="employee_count" id="editEmployeeCount"
+                                   class="form-control" min="1"
+                                   value="{{ form.employee_count.value|default:department.employee_count }}"
+                                   required>
+                            <div class="invalid-feedback" id="employeeError"></div>
+                        </div>
+
+                        <!-- مدیر بخش -->
+                        <div class="col-md-6 mb-3">
+                            <label for="editManager" class="form-label">مدیر بخش</label>
+                            <select name="manager" id="editManager" class="form-select">
+                                <option value="">انتخاب کنید...</option>
+                                {% for member in company.members.all %}
+                                <option value="{{ member.id }}"
+                                        {% if department.manager and member.id == department.manager.id %}selected{% endif %}>
+                                    {{ member.user.get_full_name }} - {{ member.get_position_display }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- توضیحات (حذف شده یا غیرفعال شده) -->
+                        <!--
+                        <div class="col-md-12 mb-3">
+                            <label for="editDescription" class="form-label">توضیحات</label>
+                            <textarea name="description" id="editDescription"
+                                     class="form-control" rows="3">{{ form.description.value|default:'' }}</textarea>
+                        </div>
+                        -->
+
+                        <!-- وضعیت فعال -->
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="is_active"
+                                       class="form-check-input" id="editIsActive"
+                                       {% if department.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="editIsActive">
+                                    بخش فعال باشد
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌ها -->
+                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                        <div>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>
+                                <span id="submitText">بروزرسانی بخش</span>
+                                <span id="loadingSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                            </button>
+                            <a href="{% url 'hse:department_list' company.id %}" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-times me-2"></i>انصراف
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // اعتبارسنجی فرم ویرایش
+    $('#editDepartmentForm').submit(function(e) {
+        e.preventDefault();
+
+        // ریست خطاها
+        $('.form-control').removeClass('is-invalid');
+        $('.invalid-feedback').empty();
+
+        let isValid = true;
+
+        // اعتبارسنجی نام بخش
+        const departmentName = $('#editName').val().trim();
+        if (!departmentName) {
+            showError('editName', 'نام بخش الزامی است');
+            isValid = false;
+        }
+
+        // اعتبارسنجی تعداد کارکنان
+        const employeeCount = $('#editEmployeeCount').val();
+        if (!employeeCount || parseInt(employeeCount) < 1) {
+            showError('editEmployeeCount', 'تعداد کارکنان باید حداقل ۱ باشد');
+            isValid = false;
+        }
+
+        if (isValid) {
+            // نمایش loading
+            $('#submitText').text('در حال بروزرسانی...');
+            $('#loadingSpinner').show();
+
+            // ارسال فرم
+            $.ajax({
+                url: $(this).attr('action') || window.location.href,
+                method: 'POST',
+                data: $(this).serialize(),
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('success', 'بخش با موفقیت بروزرسانی شد');
+                        setTimeout(() => {
+                            window.location.href = "{% url 'hse:department_list' company.id %}";
+                        }, 1500);
+                    }
+                },
+                error: function(xhr) {
+                    $('#submitText').text('بروزرسانی بخش');
+                    $('#loadingSpinner').hide();
+
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        const errors = xhr.responseJSON.errors;
+                        for (const field in errors) {
+                            showError('edit' + field.charAt(0).toUpperCase() + field.slice(1), errors[field][0]);
+                        }
+                    } else {
+                        showToast('error', 'خطا در بروزرسانی بخش');
+                    }
+                }
+            });
+        }
+
+        return false;
+    });
+
+    // توابع کمکی
+    function showError(fieldId, message) {
+        const element = $('#' + fieldId);
+        element.addClass('is-invalid');
+        $('#' + fieldId + 'Error').text(message);
+        element.focus();
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showToast(type, message) {
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        if (!$('.toast-container').length) {
+            $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+        }
+
+        $('.toast-container').append(toastHtml);
+
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+
+        setTimeout(() => {
+            $(`#${toastId}`).remove();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

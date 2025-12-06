@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:notification_list' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست اعلان‌ها
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell text-primary me-2"></i>
+                        جزئیات اعلان
+                    </h5>
+                    <div>
+                        {% if notification.is_read %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i>خوانده شده
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clock me-1"></i>خوانده نشده
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- نوع اعلان -->
+                <div class="mb-4">
+                    <span class="badge bg-{% if notification.notification_type == 'INVITATION' %}info{% elif notification.notification_type == 'TASK_ASSIGNED' %}success{% elif notification.notification_type == 'INCIDENT_REPORT' %}danger{% else %}secondary{% endif %} mb-3">
+                        {% if notification.notification_type == 'INVITATION' %}
+                        <i class="fas fa-envelope me-1"></i>دعوت
+                        {% elif notification.notification_type == 'TASK_ASSIGNED' %}
+                        <i class="fas fa-tasks me-1"></i>وظیفه
+                        {% elif notification.notification_type == 'INSPECTION_REMINDER' %}
+                        <i class="fas fa-search me-1"></i>بازرسی
+                        {% elif notification.notification_type == 'INCIDENT_REPORT' %}
+                        <i class="fas fa-exclamation-triangle me-1"></i>حادثه
+                        {% elif notification.notification_type == 'SYSTEM' %}
+                        <i class="fas fa-cog me-1"></i>سیستمی
+                        {% elif notification.notification_type == 'WARNING' %}
+                        <i class="fas fa-exclamation-circle me-1"></i>هشدار
+                        {% endif %}
+                    </span>
+
+                    <h4 class="mb-3">{{ notification.title }}</h4>
+
+                    <div class="alert alert-light border">
+                        <p class="mb-0" style="font-size: 1.1rem; line-height: 1.6;">
+                            {{ notification.message|linebreaksbr }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- اطلاعات اعلان -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-info-circle me-2 text-primary"></i>
+                                    اطلاعات اعلان
+                                </h6>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td width="120">تاریخ ایجاد:</td>
+                                        <td>
+                                            <strong>{{ notification.created_at|date:"Y/m/d" }}</strong>
+                                            <small class="text-muted d-block">{{ notification.created_at|time }}</small>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>وضعیت:</td>
+                                        <td>
+                                            {% if notification.is_read %}
+                                            <span class="badge bg-success">خوانده شده</span>
+                                            {% else %}
+                                            <span class="badge bg-warning">خوانده نشده</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>نوع:</td>
+                                        <td>{{ notification.get_notification_type_display }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- شی مرتبط -->
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-link me-2 text-primary"></i>
+                                    عملیات مرتبط
+                                </h6>
+
+                                {% if related_object_type == 'invitation' and related_object %}
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'hse:invitation_detail' related_object.id %}"
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-eye me-2"></i>مشاهده دعوت‌نامه
+                                    </a>
+
+                                    {% if not related_object.is_expired and related_object.status == 'PENDING' %}
+                                    <a href="{% url 'hse:invitation_accept' related_object.token %}"
+                                       class="btn btn-success"
+                                       onclick="return confirm('آیا از پذیرش دعوت به شرکت {{ related_object.company.name }} مطمئن هستید؟')">
+                                        <i class="fas fa-check me-2"></i>پذیرش دعوت
+                                    </a>
+                                    <a href="{% url 'hse:invitation_reject' related_object.token %}"
+                                       class="btn btn-outline-danger"
+                                       onclick="return confirm('آیا از رد دعوت شرکت {{ related_object.company.name }} مطمئن هستید؟')">
+                                        <i class="fas fa-times me-2"></i>رد دعوت
+                                    </a>
+                                    {% elif related_object.is_expired %}
+                                    <div class="alert alert-danger mb-0">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        این دعوت‌نامه منقضی شده است
+                                    </div>
+                                    {% elif related_object.status != 'PENDING' %}
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        این دعوت‌نامه قبلاً پاسخ داده شده است
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% elif related_object_type == 'task' and related_object %}
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'hse:task_detail' company_id=related_object.company.id task_id=related_object.id %}"
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-eye me-2"></i>مشاهده وظیفه
+                                    </a>
+                                </div>
+                                {% elif related_object_type == 'member' and related_object %}
+                                <div class="d-grid gap-2">
+                                    <a href="#" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye me-2"></i>مشاهده عضو
+                                    </a>
+                                </div>
+                                {% else %}
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    هیچ عملیات مرتبطی وجود ندارد
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تاریخچه -->
+                <div class="alert alert-info">
+                    <h6 class="mb-2">
+                        <i class="fas fa-history me-2"></i>
+                        تاریخچه
+                    </h6>
+                    <p class="mb-0">
+                        این اعلان {{ notification.created_at|timesince }} پیش ایجاد شده است.
+                        {% if notification.is_read %}
+                        شما این اعلان را {{ notification.updated_at|timesince }} پیش مشاهده کرده‌اید.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'hse:notification_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-2"></i>لیست اعلان‌ها
+                    </a>
+
+                    <div>
+                        {% if not notification.is_read %}
+                        <button type="button" class="btn btn-primary" onclick="markAsRead('{{ notification.id }}')">
+                            <i class="fas fa-check me-2"></i>علامت‌گذاری به عنوان خوانده شده
+                        </button>
+                        {% endif %}
+
+                        <button type="button" class="btn btn-outline-danger ms-2" onclick="deleteNotification('{{ notification.id }}')">
+                            <i class="fas fa-trash me-2"></i>حذف اعلان
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function markAsRead(notificationId) {
+    fetch(`{% url 'hse:notification_mark_read' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', notificationId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('خطا در بروزرسانی اعلان');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('خطا در برقراری ارتباط با سرور');
+    });
+}
+
+function deleteNotification(notificationId) {
+    if (confirm('آیا از حذف این اعلان مطمئن هستید؟ این عمل غیرقابل بازگشت است.')) {
+        fetch(`{% url 'hse:notification_delete' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', notificationId), {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = "{% url 'hse:notification_list' %}";
+            } else {
+                alert('خطا در حذف اعلان: ' + (data.error || 'خطای ناشناخته'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('خطا در برقراری ارتباط با سرور');
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

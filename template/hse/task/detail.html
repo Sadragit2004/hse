@@ -1,0 +1,224 @@
+<!-- templates/hse/task/detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}جزئیات وظیفه - {{ task.title }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:task_list' company.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+    </a>
+    <a href="{% url 'hse:task_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>وظیفه جدید
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ task.title }}</h5>
+                <div>
+                    <span class="badge {% if task.priority == 'URGENT' %}bg-danger
+                                     {% elif task.priority == 'HIGH' %}bg-warning text-dark
+                                     {% elif task.priority == 'MEDIUM' %}bg-info
+                                     {% else %}bg-success{% endif %} me-2">
+                        {{ task.get_priority_display }}
+                    </span>
+                    <span class="badge {% if task.status == 'COMPLETED' %}bg-success
+                                     {% elif task.status == 'IN_PROGRESS' %}bg-warning text-dark
+                                     {% elif task.status == 'UNDER_REVIEW' %}bg-primary
+                                     {% elif task.status == 'CANCELLED' %}bg-secondary
+                                     {% else %}bg-info{% endif %}">
+                        {{ task.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2">توضیحات وظیفه</h6>
+                    <p>{{ task.description|linebreaksbr|default:"-" }}</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">اطلاعات وظیفه</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">شرکت:</th>
+                                <td>{{ company.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>بخش:</th>
+                                <td>{{ task.department.name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th>مسئول:</th>
+                                <td>
+                                    {% if task.assigned_to %}
+                                    {{ task.assigned_to.user.full_name }}
+                                    {% else %}
+                                    <span class="text-muted">تعیین نشده</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>ایجاد شده توسط:</th>
+                                <td>{{ task.created_by.get_full_name|default:"-" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">تاریخ‌ها</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">تاریخ سررسید:</th>
+                                <td {% if task.due_date < today and task.status != 'COMPLETED' %}class="text-danger"{% endif %}>
+                                    {{ task.due_date|date:"Y/m/d"|default:"تعیین نشده" }}
+                                    {% if task.due_date < today and task.status != 'COMPLETED' %}
+                                    <span class="badge bg-danger ms-2">معوقه</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>تاریخ تکمیل:</th>
+                                <td>
+                                    {% if task.completed_date %}
+                                    <span class="text-success">{{ task.completed_date|date:"Y/m/d" }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>تاریخ ایجاد:</th>
+                                <td>{{ task.created_at|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th>آخرین بروزرسانی:</th>
+                                <td>{{ task.updated_at|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                {% if task.related_inspection or task.related_incident %}
+                <div class="mt-4">
+                    <h6 class="border-bottom pb-2">ارتباطات</h6>
+                    <div class="row">
+                        {% if task.related_inspection %}
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info bg-opacity-10 py-2">
+                                    <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>بازرسی مرتبط</h6>
+                                </div>
+                                <div class="card-body py-3">
+                                    <a href="{% url 'hse:inspection_detail' company.id task.related_inspection.id %}" class="text-decoration-none">
+                                        {{ task.related_inspection.title }}
+                                    </a>
+                                    <div class="mt-2">
+                                        <span class="badge bg-info">{{ task.related_inspection.get_status_display }}</span>
+                                        <small class="text-muted ms-2">{{ task.related_inspection.scheduled_date|date:"Y/m/d" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if task.related_incident %}
+                        <div class="col-md-6">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning bg-opacity-10 py-2">
+                                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>حادثه مرتبط</h6>
+                                </div>
+                                <div class="card-body py-3">
+                                    <a href="{% url 'hse:incident_detail' company.id task.related_incident.id %}" class="text-decoration-none">
+                                        {{ task.related_incident.title }}
+                                    </a>
+                                    <div class="mt-2">
+                                        <span class="badge bg-warning text-dark">{{ task.related_incident.get_severity_level_display }}</span>
+                                        <small class="text-muted ms-2">{{ task.related_incident.incident_date|date:"Y/m/d" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- تغییر وضعیت -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-sync-alt me-2"></i>تغییر وضعیت</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">وضعیت جدید:</label>
+                        <select name="status" class="form-select">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if task.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">اولویت:</label>
+                        <select name="priority" class="form-select">
+                            {% for value, label in priority_choices %}
+                            <option value="{{ value }}" {% if task.priority == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>ذخیره تغییرات
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- عملیات سریع -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>عملیات سریع</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>ویرایش وظیفه
+                    </a>
+                    {% if task.status == 'COMPLETED' %}
+                    <form method="post" class="d-grid">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="IN_PROGRESS">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-redo me-2"></i>بازگشت به در حال انجام
+                        </button>
+                    </form>
+                    {% else %}
+                    <form method="post" class="d-grid">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="COMPLETED">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>تکمیل وظیفه
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

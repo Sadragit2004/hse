@@ -1,0 +1,147 @@
+<!-- templates/hse/incident/detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}جزئیات حادثه - {{ incident.title }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:incident_list' company.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+    </a>
+    <a href="{% url 'hse:incident_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>حادثه جدید
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ incident.title }}</h5>
+                <div>
+                    <span class="badge {% if incident.severity_level == 'SEVERE' %}bg-danger
+                                     {% elif incident.severity_level == 'HIGH' %}bg-warning
+                                     {% elif incident.severity_level == 'MEDIUM' %}bg-info
+                                     {% else %}bg-success{% endif %} me-2">
+                        {{ incident.get_severity_level_display }}
+                    </span>
+                    <span class="badge {% if incident.status == 'CLOSED' %}bg-success
+                                     {% elif incident.status == 'RESOLVED' %}bg-primary
+                                     {% elif incident.status == 'UNDER_INVESTIGATION' %}bg-warning
+                                     {% else %}bg-secondary{% endif %}">
+                        {{ incident.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2">توضیحات حادثه</h6>
+                    <p>{{ incident.description|linebreaksbr }}</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">اطلاعات حادثه</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">نوع حادثه:</th>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ incident.get_incident_type_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>محل وقوع:</th>
+                                <td>{{ incident.location|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th>بخش:</th>
+                                <td>{{ incident.department.name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th>گزارش دهنده:</th>
+                                <td>{{ incident.reporter.user.full_name|default:"-" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">تاریخ‌ها</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">تاریخ وقوع:</th>
+                                <td>{{ incident.incident_date|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th>ثبت شده توسط:</th>
+                                <td>{{ incident.created_by.get_full_name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th>تاریخ ثبت:</th>
+                                <td>{{ incident.created_at|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th>آخرین بروزرسانی:</th>
+                                <td>{{ incident.updated_at|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- تغییر وضعیت -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-sync-alt me-2"></i>تغییر وضعیت</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">وضعیت جدید:</label>
+                        <select name="status" class="form-select">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if incident.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>ذخیره تغییرات
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- عملیات سریع -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>عملیات سریع</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>ویرایش حادثه
+                    </a>
+                    {% if incident.status != 'CLOSED' %}
+                    <form method="post" class="d-grid">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="CLOSED">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>بستن حادثه
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

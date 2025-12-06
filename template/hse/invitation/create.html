@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}دعوت عضو جدید - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:invitation_list' company.id %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-envelope text-primary me-2"></i>
+                    دعوت عضو جدید
+                </h5>
+                <small class="text-muted">دعوت از اعضای جدید به شرکت</small>
+            </div>
+
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <!-- شماره موبایل -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">شماره موبایل دعوت شده *</label>
+                            <input type="tel"
+                                   name="mobile_number"
+                                   class="form-control"
+                                   placeholder="مثال: 09123456789"
+                                   required
+                                   pattern="09[0-9]{9}"
+                                   maxlength="11">
+                            <small class="form-text text-muted">
+                                کاربر می‌تواند در سیستم وجود داشته باشد یا نباشد
+                            </small>
+                        </div>
+
+                        <!-- سمت -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">سمت *</label>
+                            <select name="position" class="form-select" required>
+                                <option value="">انتخاب سمت...</option>
+                                <option value="WORKER">کارگر</option>
+                                <option value="OPERATOR">اپراتور</option>
+                                <option value="EXPERT">کارشناس</option>
+                                <option value="SUPERVISOR">ناظر</option>
+                                <option value="MANAGER">مدیر</option>
+                                <option value="OTHER">سایر</option>
+                            </select>
+                        </div>
+
+                        <!-- بخش -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">بخش (اختیاری)</label>
+                            <select name="department" class="form-select">
+                                <option value="">بدون بخش</option>
+                                {% for dept in company.departments.all %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- پیام -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">پیام دعوت (اختیاری)</label>
+                            <textarea name="message" class="form-control" rows="3"
+                                     placeholder="توضیحات، خوش‌آمدگویی، یا دستورالعمل‌ها..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>نحوه کار:</h6>
+                        <ul class="mb-0">
+                            <li>شماره موبایل را وارد کنید (کاربر می‌تواند در سیستم باشد یا نباشد)</li>
+                            <li>اگر کاربر در سیستم <strong>باشد</strong>:
+                                <ul>
+                                    <li>دعوت‌نامه را در اعلان‌های خود می‌بیند</li>
+                                    <li>می‌تواند دعوت را بپذیرد یا رد کند</li>
+                                    <li>در صورت پذیرش، به عنوان عضو اضافه می‌شود</li>
+                                </ul>
+                            </li>
+                            <li>اگر کاربر در سیستم <strong>نباشد</strong>:
+                                <ul>
+                                    <li>وقتی با این شماره ثبت‌نام کند</li>
+                                    <li>دعوت‌نامه‌های pending را می‌بیند</li>
+                                    <li>می‌تواند آنها را بپذیرد یا رد کند</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>ارسال دعوت
+                        </button>
+                        <a href="{% url 'hse:invitation_list' company.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>انصراف
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// اعتبارسنجی شماره موبایل
+document.querySelector('form').addEventListener('submit', function(e) {
+    const mobileInput = document.querySelector('input[name="mobile_number"]');
+    const mobileRegex = /^09\d{9}$/;
+
+    if (!mobileRegex.test(mobileInput.value)) {
+        e.preventDefault();
+        alert('لطفا شماره موبایل معتبر وارد کنید (مثال: 09123456789)');
+        mobileInput.focus();
+    }
+});
+</script>
+{% endblock %}

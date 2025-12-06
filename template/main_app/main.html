@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>معرفی ابزار HSE</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#0ea5a0; --muted:#94a3b8; --glass: rgba(255,255,255,0.04);
+      --radius:16px; --fw-bold:700; --fw-regular:400;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family: "Vazir", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,#071021 0%, #081426 60%); color:#e6eef6; -webkit-font-smoothing:antialiased;
+      line-height:1.6; padding:20px;
+    }
+    .container{max-width:1100px;margin:0 auto}
+
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:18px;border-radius:12px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),#06b6d4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#032;box-shadow:0 4px 12px rgba(14,165,160,0.15)}
+    .site-name{font-size:18px;font-weight:700}
+    nav{display:flex;gap:12px;align-items:center}
+    nav a{color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:8px}
+    nav a:hover{color:var(--accent);background:var(--glass)}
+
+    .hero{display:grid;grid-template-columns:1fr 420px;gap:24px;align-items:center;margin-top:28px}
+    .hero-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:28px;border-radius:18px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    .hero h1{margin:0 0 12px;font-size:28px}
+    .hero p{color:var(--muted);margin:0 0 18px}
+    .btn{display:inline-block;padding:10px 16px;border-radius:12px;background:var(--accent);color:#022; text-decoration:none;font-weight:700}
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+    .feature{background:rgba(255,255,255,0.02);padding:14px;border-radius:12px;text-align:center}
+    .feature h3{margin:10px 0 6px}
+    .muted{color:var(--muted)}
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:18px;border-radius:14px;margin-top:18px}
+
+    footer{margin-top:28px;text-align:center;color:var(--muted);font-size:14px}
+
+    /* responsive */
+    @media (max-width:900px){
+      .hero{grid-template-columns:1fr;}
+      .features{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width:520px){
+      header{flex-direction:column;align-items:flex-start}
+      .features{grid-template-columns:1fr}
+    }
+
+    /* small helpers */
+    .label{display:inline-block;background:rgba(14,165,160,0.08);color:var(--accent);padding:6px 10px;border-radius:999px;font-weight:600}
+    .badge{font-size:12px;color:var(--muted)}
+
+    /* form */
+    form{display:flex;flex-direction:column;gap:10px}
+    input[type="text"], input[type="email"], textarea{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    textarea{min-height:90px}
+    .row{display:flex;gap:10px}
+    .row .col{flex:1}
+
+    /* small animation */
+    .pulse{animation:pulse 3s infinite}
+    @keyframes pulse{0%{transform:translateY(0)}50%{transform:translateY(-4px)}100%{transform:translateY(0)}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo">HSE</div>
+        <div>
+          <div class="site-name">ابزار HSE</div>
+          <div class="badge">سلامت، ایمنی و محیط‌زیست</div>
+        </div>
+      </div>
+      <nav>
+        <a href="#about">درباره</a>
+        <a href="#features">قابلیت‌ها</a>
+        <a href="#how">نحوه کار</a>
+        <a href="#contact">تماس</a>
+              <a class="btn" style="padding:8px 14px;font-size:14px;border-radius:10px;" href="{% url 'account:send_mobile' %}">ثبت‌نام</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-card">
+        <span class="label">معرفی</span>
+        <h1>ابزار HSE — مدیریت سلامت، ایمنی و محیط‌زیست</h1>
+        <p>یک پنل ساده و قدرتمند برای ثبت رخدادها، ارزیابی ریسک، بازرسی‌ها و گزارش‌دهی که به کسب‌و‌کارها کمک می‌کند از حوادث جلوگیری کنند و استانداردهای ایمنی را رعایت نمایند.</p>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+          <a class="btn" href="#contact">درخواست دمو</a>
+          <a class="btn secondary" href="#features">مشاهده قابلیت‌ها</a>
+        </div>
+
+        <div class="features" id="features">
+          <div class="feature">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6 8v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M18 8v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h3>ثبت رخداد</h3>
+            <p class="muted">ثبت آسان حوادث و نواقص به‌صورت موبایل‌فرندلی.</p>
+          </div>
+          <div class="feature">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 7h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M12 7v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <h3>ارزیابی ریسک</h3>
+            <p class="muted">ابزار سریع برای تحلیل و اولویت‌بندی مخاطرات.</p>
+          </div>
+          <div class="feature">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 12h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M12 3v18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <h3>گزارش‌دهی</h3>
+            <p class="muted">گزارشات آماده برای ارائه به مراجع و مدیریت.</p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card">
+        <h3 id="about">چرا ابزار HSE؟</h3>
+        <p class="muted">این ابزار به شما کمک می‌کند با کمترین زمان و هزینه، سیستم ایمنی سازمان را تقویت کنید: ثبت سریع حوادث، پیگیری اقدامات اصلاحی، ایجاد چک‌لیست‌های بازرسی و خروجی‌گیری از گزارش‌ها.</p>
+
+        <div style="margin-top:12px">
+          <strong>موارد استفاده:</strong>
+          <ul class="muted">
+            <li>صنایع تولیدی</li>
+            <li>پروژه‌های عمرانی</li>
+            <li>شرکت‌های پیمانکاری</li>
+          </ul>
+        </div>
+
+        <div style="margin-top:14px">
+          <strong>نکات کلیدی</strong>
+          <div class="muted">پشتیبانی موبایل، خروجی PDF، سطح دسترسی چندگانه و داشبورد مدیریتی.</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="card" id="how">
+      <h3>نحوه کار — سریع در سه قدم</h3>
+      <ol class="muted">
+        <li>ثبت رخداد یا بازرسی با یک فرم ساده</li>
+        <li>تحلیل ریسک و اختصاص اقدامات اصلاحی</li>
+        <li>پیگیری و گزارش‌گیری برای اثبات انطباق</li>
+      </ol>
+
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px;background:rgba(255,255,255,0.02);padding:12px;border-radius:10px">
+          <strong>قابلیت اختصاصی</strong>
+          <div class="muted">یادآور خودکار برای وظایف و تاریخ‌ها</div>
+        </div>
+        <div style="flex:1;min-width:220px;background:rgba(255,255,255,0.02);padding:12px;border-radius:10px">
+          <strong>یکپارچگی</strong>
+          <div class="muted">قابلیت اتصال به سیستم‌های ERP و ایمیل</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="contact">
+      <h3>درخواست دمو / تماس</h3>
+      <form id="contactForm">
+        <div class="row">
+          <div class="col">
+            <input type="text" id="name" placeholder="نام و نام خانوادگی" required />
+          </div>
+          <div class="col">
+            <input type="email" id="email" placeholder="ایمیل" required />
+          </div>
+        </div>
+        <textarea id="message" placeholder="پیام یا درخواست" required></textarea>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button type="submit" class="btn">ارسال درخواست</button>
+          <button type="button" id="demoBtn" class="btn secondary">دریافت نمونه گزارش</button>
+        </div>
+        <div id="formResult" class="muted" style="margin-top:10px"></div>
+      </form>
+    </section>
+
+    <footer>
+      © تمام حقوق این صفحه محفوظ است — ابزار HSE • طراحی سریع نمونه
+    </footer>
+  </div>
+
+  <script>
+    // ساده‌ترین اعتبارسنجی و شبیه‌سازی ارسال
+    document.getElementById('contactForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const msg = document.getElementById('message').value.trim();
+      const result = document.getElementById('formResult');
+      if(!name || !email || !msg){ result.textContent = 'لطفاً همه فیلدها را پر کنید.'; return; }
+      result.textContent = 'در حال ارسال...';
+      // شبیه‌سازی درخواست
+      setTimeout(()=>{
+        result.textContent = 'درخواست شما ثبت شد. ما به زودی با شما تماس می‌گیریم.';
+        document.getElementById('contactForm').reset();
+      }, 900);
+    });
+
+    // نمونه گزارش (شبیه‌سازی)
+    document.getElementById('demoBtn').addEventListener('click', ()=>{
+      const blob = new Blob([`گزارش نمونه ابزار HSE\n\nتاریخ: ${new Date().toLocaleDateString('fa-IR')}\n\nخلاصه: نمونه گزارش جهت نمایش امکانات`], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='HSE_sample_report.txt'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // smooth scrolling for internal links
+    document.querySelectorAll('a[href^="#"]').forEach(a=>{
+      a.addEventListener('click', function(e){
+        e.preventDefault(); const t=document.querySelector(this.getAttribute('href'));
+        if(t) t.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    });
+  </script>
+</body>
+</html>

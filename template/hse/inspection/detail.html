@@ -1,0 +1,150 @@
+<!-- templates/hse/inspection/detail.html -->
+{% extends 'base.html' %}
+<!-- خط crispy_forms_tags حذف شود -->
+
+{% block title %}جزئیات بازرسی - {{ inspection.title }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:inspection_list' company.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+    </a>
+    <a href="{% url 'hse:inspection_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>بازرسی جدید
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ inspection.title }}</h5>
+                <span class="badge {% if inspection.status == 'COMPLETED' %}bg-success
+                                   {% elif inspection.status == 'IN_PROGRESS' %}bg-warning
+                                   {% else %}bg-secondary{% endif %}">
+                    {{ inspection.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2">توضیحات</h6>
+                    <p>{{ inspection.description|linebreaksbr|default:"-" }}</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">اطلاعات بازرسی</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">شرکت:</th>
+                                <td>{{ company.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>اولویت:</th>
+                                <td>
+                                    <span class="badge {% if inspection.priority == 'HIGH' %}bg-danger
+                                                      {% elif inspection.priority == 'MEDIUM' %}bg-warning
+                                                      {% else %}bg-success{% endif %}">
+                                        {{ inspection.get_priority_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>بخش:</th>
+                                <td>{{ inspection.department.name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th>مسئول:</th>
+                                <td>{{ inspection.assigned_to.user.full_name|default:"تعیین نشده" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">تاریخ‌ها</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">تاریخ برنامه‌ریزی:</th>
+                                <td>{{ inspection.scheduled_date|date:"Y/m/d" }}</td>
+                            </tr>
+                            <tr>
+                                <th>تاریخ تکمیل:</th>
+                                <td>
+                                    {% if inspection.completed_date %}
+                                    <span class="text-success">{{ inspection.completed_date|date:"Y/m/d" }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>ایجاد شده توسط:</th>
+                                <td>{{ inspection.created_by.get_full_name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th>آخرین بروزرسانی:</th>
+                                <td>{{ inspection.updated_at|date:"Y/m/d - H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- تغییر وضعیت -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-sync-alt me-2"></i>تغییر وضعیت</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">وضعیت جدید:</label>
+                        <select name="status" class="form-select">
+                            {% for value, label in inspection_status_choices %}
+                            <option value="{{ value }}" {% if inspection.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>ذخیره تغییرات
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- عملیات سریع -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>عملیات سریع</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>ویرایش بازرسی
+                    </a>
+                    <a href="#" class="btn btn-outline-danger">
+                        <i class="fas fa-trash me-2"></i>حذف بازرسی
+                    </a>
+                    {% if inspection.status != 'COMPLETED' %}
+                    <form method="post" class="d-grid">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="COMPLETED">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>علامت‌گذاری به عنوان تکمیل شده
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

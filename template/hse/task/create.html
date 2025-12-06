@@ -1,0 +1,184 @@
+<!-- templates/hse/task/create.html -->
+{% extends 'base.html' %}
+
+{% block title %}ایجاد وظیفه جدید - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:task_list' company.id %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">ایجاد وظیفه جدید</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="taskForm">
+            {% csrf_token %}
+
+            <!-- عنوان و توضیحات -->
+            <div class="mb-3">
+                <label for="id_title" class="form-label">
+                    عنوان وظیفه
+                    <span class="text-danger">*</span>
+                </label>
+                <input type="text" name="title" id="id_title"
+                       class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                       placeholder="عنوان وظیفه"
+                       value="{{ form.title.value|default:'' }}"
+                       required>
+                {% if form.title.errors %}
+                <div class="text-danger">
+                    {% for error in form.title.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_description" class="form-label">توضیحات</label>
+                <textarea name="description" id="id_description"
+                          class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                          rows="3">{{ form.description.value|default:'' }}</textarea>
+                {% if form.description.errors %}
+                <div class="text-danger">
+                    {% for error in form.description.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="id_priority" class="form-label">
+                        اولویت
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select name="priority" id="id_priority"
+                            class="form-select {% if form.priority.errors %}is-invalid{% endif %}" required>
+                        <option value="">انتخاب کنید</option>
+                        <option value="LOW" {% if form.priority.value == 'LOW' %}selected{% endif %}>پایین</option>
+                        <option value="MEDIUM" {% if form.priority.value == 'MEDIUM' %}selected{% endif %}>متوسط</option>
+                        <option value="HIGH" {% if form.priority.value == 'HIGH' %}selected{% endif %}>بالا</option>
+                        <option value="URGENT" {% if form.priority.value == 'URGENT' %}selected{% endif %}>فوری</option>
+                    </select>
+                    {% if form.priority.errors %}
+                    <div class="text-danger">
+                        {% for error in form.priority.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_assigned_to" class="form-label">واگذار شده به</label>
+                    <select name="assigned_to" id="id_assigned_to"
+                            class="form-select {% if form.assigned_to.errors %}is-invalid{% endif %}">
+                        <option value="">انتخاب کنید</option>
+                        {% for member in members %}
+                        <option value="{{ member.id }}" {% if form.assigned_to.value == member.id %}selected{% endif %}>
+                            {{ member.user.full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.assigned_to.errors %}
+                    <div class="text-danger">
+                        {% for error in form.assigned_to.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- بخش مرتبط -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="id_related_inspection" class="form-label">مرتبط با بازرسی</label>
+                    <select name="related_inspection" id="id_related_inspection"
+                            class="form-select {% if form.related_inspection.errors %}is-invalid{% endif %}">
+                        <option value="">بدون ارتباط</option>
+                        {% for inspection in inspections %}
+                        <option value="{{ inspection.id }}" {% if form.related_inspection.value == inspection.id %}selected{% endif %}>
+                            {{ inspection.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.related_inspection.errors %}
+                    <div class="text-danger">
+                        {% for error in form.related_inspection.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="id_related_incident" class="form-label">مرتبط با حادثه</label>
+                    <select name="related_incident" id="id_related_incident"
+                            class="form-select {% if form.related_incident.errors %}is-invalid{% endif %}">
+                        <option value="">بدون ارتباط</option>
+                        {% for incident in incidents %}
+                        <option value="{{ incident.id }}" {% if form.related_incident.value == incident.id %}selected{% endif %}>
+                            {{ incident.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.related_incident.errors %}
+                    <div class="text-danger">
+                        {% for error in form.related_incident.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- فیلد تاریخ سررسید -->
+            <div class="mb-3">
+
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'hse:task_list' company.id %}" class="btn btn-secondary">
+                    انصراف
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    ایجاد وظیفه
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('due_date');
+    const form = document.getElementById('taskForm');
+
+    // اعتبارسنجی قبل از ارسال فرم
+    form.addEventListener('submit', function(event) {
+        if (!dateInput.value) {
+            event.preventDefault();
+            alert('لطفاً تاریخ سررسید را وارد کنید.');
+            return false;
+        }
+
+        // بررسی اینکه تاریخ سررسید از تاریخ امروز کمتر نباشد
+        const today = new Date();
+        const selectedDate = new Date(dateInput.value);
+        today.setHours(0, 0, 0, 0);
+
+        if (selectedDate < today) {
+            event.preventDefault();
+            alert('تاریخ سررسید نمی‌تواند از تاریخ امروز کمتر باشد.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

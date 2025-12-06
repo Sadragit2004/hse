@@ -1,0 +1,220 @@
+<!-- templates/hse/dashboard.html -->
+{% extends 'base.html' %}
+
+{% block title %}داشبورد - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:inspection_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>بازرسی جدید
+    </a>
+    <a href="{% url 'hse:incident_create' company.id %}" class="btn btn-danger">
+        <i class="fas fa-plus me-2"></i>گزارش حادثه
+    </a>
+    <a href="{% url 'hse:task_create' company.id %}" class="btn btn-success">
+        <i class="fas fa-plus me-2"></i>وظیفه جدید
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-2 col-6">
+        <div class="stat-card bg-primary">
+            <i class="fas fa-sitemap"></i>
+            <span class="number">{{ stats.departments }}</span>
+            <small>بخش</small>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card bg-success">
+            <i class="fas fa-users"></i>
+            <span class="number">{{ stats.members }}</span>
+            <small>عضو</small>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card bg-info">
+            <i class="fas fa-clipboard-check"></i>
+            <span class="number">{{ stats.inspections }}</span>
+            <small>بازرسی</small>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card bg-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span class="number">{{ stats.incidents }}</span>
+            <small>حادثه</small>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card bg-danger">
+            <i class="fas fa-tasks"></i>
+            <span class="number">{{ stats.tasks }}</span>
+            <small>وظیفه</small>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card bg-secondary">
+            <i class="fas fa-check-circle"></i>
+            <span class="number">{{ stats.completed_tasks }}</span>
+            <small>تکمیل شده</small>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Inspections -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clipboard-check text-primary me-2"></i>بازرسی‌های اخیر</h5>
+                <a href="{% url 'hse:inspection_list' company.id %}" class="btn btn-sm btn-outline-primary">مشاهده همه</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>عنوان</th>
+                                <th>وضعیت</th>
+                                <th>تاریخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inspection in recent_inspections %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'hse:inspection_detail' company.id inspection.id %}">
+                                        {{ inspection.title|truncatechars:30 }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if inspection.status == 'COMPLETED' %}
+                                    <span class="badge bg-success">تکمیل شده</span>
+                                    {% elif inspection.status == 'IN_PROGRESS' %}
+                                    <span class="badge bg-warning">در حال انجام</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ inspection.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ inspection.scheduled_date|date:"Y/m/d" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-3">هیچ بازرسی‌ای یافت نشد</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Incidents -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle text-danger me-2"></i>حوادث اخیر</h5>
+                <a href="{% url 'hse:incident_list' company.id %}" class="btn btn-sm btn-outline-danger">مشاهده همه</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>عنوان</th>
+                                <th>شدت</th>
+                                <th>تاریخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incident in recent_incidents %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'hse:incident_detail' company.id incident.id %}">
+                                        {{ incident.title|truncatechars:30 }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if incident.severity_level == 'SEVERE' %}
+                                    <span class="badge bg-danger">شدید</span>
+                                    {% elif incident.severity_level == 'HIGH' %}
+                                    <span class="badge bg-warning">بالا</span>
+                                    {% else %}
+                                    <span class="badge bg-info">{{ incident.get_severity_level_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ incident.incident_date|date:"Y/m/d" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-3">هیچ حادثه‌ای یافت نشد</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Urgent Tasks -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-tasks text-success me-2"></i>وظایف فوری</h5>
+                <a href="{% url 'hse:task_list' company.id %}" class="btn btn-sm btn-outline-success">مشاهده همه</a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for task in urgent_tasks %}
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0">
+                                    <a href="{% url 'hse:task_detail' company.id task.id %}">
+                                        {{ task.title|truncatechars:25 }}
+                                    </a>
+                                </h6>
+                                {% if task.priority == 'URGENT' %}
+                                <span class="badge bg-danger">فوری</span>
+                                {% elif task.priority == 'HIGH' %}
+                                <span class="badge bg-warning">بالا</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-muted small mb-2">{{ task.description|truncatechars:50 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {% if task.due_date %}
+                                    {{ task.due_date|date:"Y/m/d" }}
+                                    {% else %}
+                                    بدون تاریخ
+                                    {% endif %}
+                                </small>
+                                <small>
+                                    {% if task.status == 'COMPLETED' %}
+                                    <span class="badge bg-success">تکمیل شده</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ task.get_status_display }}</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center text-muted py-4">
+                        هیچ وظیفه فوری‌ای یافت نشد
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

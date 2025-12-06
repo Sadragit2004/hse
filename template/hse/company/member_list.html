@@ -1,0 +1,546 @@
+<!-- templates/hse/company/member_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}اعضای شرکت {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:member_add' company.id %}" class="btn btn-primary">
+        <i class="fas fa-user-plus me-2"></i>افزودن عضو
+    </a>
+    <a href="{% url 'hse:invitation_create' company.id %}" class="btn btn-success">
+        <i class="fas fa-envelope me-2"></i>دعوت عضو
+    </a>
+    <a href="{% url 'hse:company_detail' company.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-2"></i>بازگشت به شرکت
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">
+                        <i class="fas fa-users text-primary me-2"></i>
+                        اعضای شرکت {{ company.name }}
+                    </h5>
+                    <small class="text-muted">مدیریت کارکنان و مسئولین شرکت</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-primary">
+                        <i class="fas fa-user me-1"></i>
+                        {{ members.count }} عضو
+                    </span>
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle me-1"></i>
+                        {{ active_members }} فعال
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- فیلترها -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3" id="filterForm">
+                    <div class="col-md-4">
+                        <label class="form-label">وضعیت:</label>
+                        <select name="status" class="form-select" id="statusFilter">
+                            <option value="">همه</option>
+                            <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>فعال</option>
+                            <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>غیرفعال</option>
+                            <option value="SUSPENDED" {% if status_filter == 'SUSPENDED' %}selected{% endif %}>تعلیق شده</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">بخش:</label>
+                        <select name="department" class="form-select" id="departmentFilter">
+                            <option value="">همه</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if department_filter == dept.id|stringformat:"s" %}selected{% endif %}>
+                                {{ dept.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="btn-group w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-2"></i>اعمال فیلتر
+                            </button>
+                            <a href="{% url 'hse:member_list' company.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>حذف فیلتر
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- لیست اعضا -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">لیست اعضای شرکت</h6>
+                    <div class="input-group" style="width: 250px;">
+                        <input type="text" class="form-control form-control-sm"
+                               placeholder="جستجوی عضو..." id="searchMember">
+                        <button class="btn btn-outline-secondary btn-sm" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                {% if members %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="memberTable">
+                        <thead>
+                            <tr>
+                                <th>عضو</th>
+                                <th>سمت</th>
+                                <th>بخش</th>
+                                <th>وضعیت</th>
+                                <th>تاریخ عضویت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr data-member-id="{{ member.id }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-3">
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 40px; height: 40px; font-size: 1.2rem;">
+                                                {{ member.user.get_full_name|slice:"0:1"|default:member.user.mobileNumber|slice:"0:1" }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <strong>{{ member.user.get_full_name|default:member.user.mobileNumber }}</strong>
+                                            <div class="text-muted small">
+                                                <i class="fas fa-phone me-1"></i>{{ member.user.mobileNumber }}
+                                                {% if member.user.email %}
+                                                • <i class="fas fa-envelope me-1"></i>{{ member.user.email }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge
+                                        {% if member.position == 'MANAGER' %}bg-danger
+                                        {% elif member.position == 'SUPERVISOR' %}bg-warning
+                                        {% elif member.position == 'EXPERT' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ member.get_position_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if member.department %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-sitemap me-1"></i>
+                                        {{ member.department.name }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">
+                                        <i class="fas fa-times me-1"></i>
+                                        تعیین نشده
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if member.status == 'ACTIVE' %}
+                                    <span class="badge bg-success" id="status-{{ member.id }}">
+                                        <i class="fas fa-check-circle me-1"></i>فعال
+                                    </span>
+                                    {% elif member.status == 'INACTIVE' %}
+                                    <span class="badge bg-secondary" id="status-{{ member.id }}">
+                                        <i class="fas fa-times-circle me-1"></i>غیرفعال
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning" id="status-{{ member.id }}">
+                                        <i class="fas fa-pause-circle me-1"></i>تعلیق شده
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ member.join_date|date:"Y/m/d" }}
+                                    <div class="text-muted small">
+                                        {{ member.join_date|timesince }} پیش
+                                    </div>
+                                    {% if member.leave_date %}
+                                    <div class="text-danger small">
+                                        <i class="fas fa-sign-out-alt me-1"></i>
+                                        ترک: {{ member.leave_date|date:"Y/m/d" }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-info view-member"
+                                                data-member-id="{{ member.id }}"
+                                                title="مشاهده">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-warning edit-member"
+                                                data-member-id="{{ member.id }}"
+                                                title="ویرایش">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary dropdown-toggle"
+                                                    type="button" data-bs-toggle="dropdown"
+                                                    title="تغییر وضعیت">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item change-status"
+                                                       href="#" data-status="ACTIVE"
+                                                       data-member-id="{{ member.id }}">
+                                                        <i class="fas fa-check-circle text-success me-2"></i>فعال
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item change-status"
+                                                       href="#" data-status="INACTIVE"
+                                                       data-member-id="{{ member.id }}">
+                                                        <i class="fas fa-times-circle text-secondary me-2"></i>غیرفعال
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item change-status"
+                                                       href="#" data-status="SUSPENDED"
+                                                       data-member-id="{{ member.id }}">
+                                                        <i class="fas fa-pause-circle text-warning me-2"></i>تعلیق شده
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">هنوز عضوی به شرکت اضافه نکرده‌اید</h5>
+                    <p class="text-muted mb-4">برای مدیریت بهتر، اعضای شرکت را اضافه کنید.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'hse:member_add' company.id %}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>افزودن عضو
+                        </a>
+                        <a href="{% url 'hse:invitation_create' company.id %}" class="btn btn-success">
+                            <i class="fas fa-envelope me-2"></i>دعوت عضو
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal مشاهده جزئیات عضو -->
+<div class="modal fade" id="viewMemberModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-circle me-2"></i>
+                    جزئیات عضو
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="memberDetails">
+                <!-- محتوای Modal از طریق AJAX لود می‌شود -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تغییر وضعیت عضو -->
+<div class="modal fade" id="changeStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-sync-alt me-2"></i>
+                    تغییر وضعیت عضو
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا مطمئن هستید که می‌خواهید وضعیت "<strong id="memberNameForStatus"></strong>" را تغییر دهید؟</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span id="statusChangeMessage"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="newStatus" class="form-label">وضعیت جدید:</label>
+                    <select class="form-select" id="newStatus">
+                        <option value="ACTIVE">فعال</option>
+                        <option value="INACTIVE">غیرفعال</option>
+                        <option value="SUSPENDED">تعلیق شده</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="leaveDateField" style="display: none;">
+                    <label for="leaveDate" class="form-label">تاریخ ترک شرکت:</label>
+                    <input type="date" class="form-control" id="leaveDate">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-warning" id="confirmStatusChange">
+                    <i class="fas fa-sync-alt me-2"></i>تغییر وضعیت
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // جستجوی اعضا
+    $('#searchMember').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        $('#memberTable tbody tr').each(function() {
+            const text = $(this).text().toLowerCase();
+            if (text.includes(searchTerm)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    // مشاهده جزئیات عضو
+    $('.view-member').click(function() {
+        const memberId = $(this).data('member-id');
+        $('#viewMemberModal').modal('show');
+
+        // بارگذاری جزئیات عضو با AJAX
+        $.ajax({
+            url: `/hse/companies/{{ company.id }}/members/${memberId}/detail/`,
+            method: 'GET',
+            success: function(response) {
+                $('#memberDetails').html(response.html);
+            },
+            error: function() {
+                $('#memberDetails').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        خطا در بارگذاری اطلاعات عضو
+                    </div>
+                `);
+            }
+        });
+    });
+
+    // باز کردن Modal تغییر وضعیت
+    $('.change-status').click(function(e) {
+        e.preventDefault();
+        const memberId = $(this).data('member-id');
+        const memberRow = $(`tr[data-member-id="${memberId}"]`);
+        const memberName = memberRow.find('strong').text();
+
+        $('#memberNameForStatus').text(memberName);
+        $('#changeStatusModal').data('member-id', memberId);
+
+        // تنظیم پیام بر اساس وضعیت جدید
+        const newStatus = $(this).data('status');
+        $('#newStatus').val(newStatus);
+        updateStatusMessage(newStatus);
+
+        $('#changeStatusModal').modal('show');
+    });
+
+    // تغییر وضعیت
+    $('#confirmStatusChange').click(function() {
+        const memberId = $('#changeStatusModal').data('member-id');
+        const newStatus = $('#newStatus').val();
+        const leaveDate = $('#leaveDate').val();
+
+        $.ajax({
+            url: `/hse/companies/{{ company.id }}/members/${memberId}/change-status/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            data: {
+                'status': newStatus,
+                'leave_date': leaveDate
+            },
+            success: function(response) {
+                $('#changeStatusModal').modal('hide');
+
+                // بروزرسانی UI
+                const statusBadge = $(`#status-${memberId}`);
+                statusBadge.removeClass('bg-success bg-secondary bg-warning');
+
+                let badgeClass = 'bg-secondary';
+                let icon = 'fa-times-circle';
+                let text = 'غیرفعال';
+
+                if (newStatus === 'ACTIVE') {
+                    badgeClass = 'bg-success';
+                    icon = 'fa-check-circle';
+                    text = 'فعال';
+                } else if (newStatus === 'SUSPENDED') {
+                    badgeClass = 'bg-warning';
+                    icon = 'fa-pause-circle';
+                    text = 'تعلیق شده';
+                }
+
+                statusBadge.addClass(badgeClass);
+                statusBadge.html(`<i class="fas ${icon} me-1"></i>${text}`);
+
+                showToast('success', 'وضعیت عضو با موفقیت تغییر کرد');
+            },
+            error: function() {
+                showToast('error', 'خطا در تغییر وضعیت عضو');
+            }
+        });
+    });
+
+    // تغییر وضعیت از dropdown
+    $('#newStatus').change(function() {
+        updateStatusMessage($(this).val());
+    });
+
+    // توابع کمکی
+    function updateStatusMessage(status) {
+        let message = '';
+        const leaveDateField = $('#leaveDateField');
+
+        if (status === 'INACTIVE') {
+            message = 'عضو از شرکت خارج شده و دسترسی‌هایش قطع می‌شود.';
+            leaveDateField.show();
+        } else if (status === 'SUSPENDED') {
+            message = 'عضو به طور موقت از سیستم تعلیق می‌شود.';
+            leaveDateField.hide();
+        } else {
+            message = 'عضو به طور کامل فعال شده و به تمام امکانات دسترسی دارد.';
+            leaveDateField.hide();
+        }
+
+        $('#statusChangeMessage').text(message);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showToast(type, message) {
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        if (!$('.toast-container').length) {
+            $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+        }
+
+        $('.toast-container').append(toastHtml);
+
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+
+        setTimeout(() => {
+            $(`#${toastId}`).remove();
+        }, 5000);
+    }
+
+    // فیلترها
+    $('#statusFilter, #departmentFilter').change(function() {
+        $('#filterForm').submit();
+    });
+});
+</script>
+
+<style>
+.avatar {
+    flex-shrink: 0;
+}
+
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.dropdown-menu {
+    min-width: 150px;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: rgba(0,0,0,0.02);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

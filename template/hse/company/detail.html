@@ -1,0 +1,294 @@
+<!-- templates/hse/company/detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}شرکت {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:company_edit' company.id %}" class="btn btn-warning">
+        <i class="fas fa-edit me-2"></i>ویرایش
+    </a>
+    <a href="{% url 'hse:department_list' company.id %}" class="btn btn-info">
+        <i class="fas fa-sitemap me-2"></i>بخش‌ها
+    </a>
+    <a href="{% url 'hse:member_list' company.id %}" class="btn btn-success">
+        <i class="fas fa-users me-2"></i>اعضا
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- اطلاعات اصلی شرکت -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-building text-primary me-2"></i>
+                    اطلاعات شرکت
+                </h5>
+                <span class="badge {% if company.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                    {% if company.is_active %}
+                    <i class="fas fa-check-circle me-1"></i>فعال
+                    {% else %}
+                    <i class="fas fa-times-circle me-1"></i>غیرفعال
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">نام شرکت:</label>
+                        <h5>{{ company.name }}</h5>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">حوزه فعالیت:</label>
+                        <h5>{{ company.activity_field }}</h5>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">تاریخ ایجاد:</label>
+                        <p class="mb-0">{{ company.created_at|date:"Y/m/d ساعت H:i" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">آخرین بروزرسانی:</label>
+                        <p class="mb-0">{{ company.updated_at|date:"Y/m/d ساعت H:i" }}</p>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="text-muted small">ایجاد کننده:</label>
+                        <p class="mb-0">
+                            <i class="fas fa-user me-1"></i>
+                            {{ company.user.get_full_name|default:company.user.mobileNumber }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آمار سریع -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-pie text-info me-2"></i>آمار کلی</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-3">
+                            <div class="text-primary fw-bold h4 mb-1">{{ departments.count }}</div>
+                            <small class="text-muted">بخش</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-3">
+                            <div class="text-success fw-bold h4 mb-1">{{ members.count }}</div>
+                            <small class="text-muted">عضو</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <div class="text-warning fw-bold h4 mb-1">{{ inspection_stats.total }}</div>
+                            <small class="text-muted">بازرسی</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <div class="text-danger fw-bold h4 mb-1">{{ incident_stats.total }}</div>
+                            <small class="text-muted">حادثه</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آمار جزئی -->
+<div class="row">
+    <!-- آمار بازرسی‌ها -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-clipboard-check text-primary me-2"></i>بازرسی‌ها</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <span>کل بازرسی‌ها:</span>
+                    <strong>{{ inspection_stats.total }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>تکمیل شده:</span>
+                    <strong class="text-success">{{ inspection_stats.completed }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>در حال انجام:</span>
+                    <strong class="text-warning">{{ inspection_stats.in_progress }}</strong>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'hse:inspection_list' company.id %}" class="btn btn-sm btn-outline-primary">
+                        مشاهده همه بازرسی‌ها
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آمار حوادث -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-exclamation-triangle text-danger me-2"></i>حوادث</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <span>کل حوادث:</span>
+                    <strong>{{ incident_stats.total }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>حل شده:</span>
+                    <strong class="text-success">{{ incident_stats.resolved }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>حادثه شدید:</span>
+                    <strong class="text-danger">{{ incident_stats.severe }}</strong>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'hse:incident_list' company.id %}" class="btn btn-sm btn-outline-danger">
+                        مشاهده همه حوادث
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آمار وظایف -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-tasks text-success me-2"></i>وظایف</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <span>کل وظایف:</span>
+                    <strong>{{ task_stats.total }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>تکمیل شده:</span>
+                    <strong class="text-success">{{ task_stats.completed }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>معوقه:</span>
+                    <strong class="text-danger">{{ task_stats.overdue }}</strong>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'hse:task_list' company.id %}" class="btn btn-sm btn-outline-success">
+                        مشاهده همه وظایف
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- بخش‌های شرکت -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-sitemap text-info me-2"></i>بخش‌های شرکت</h6>
+                <a href="{% url 'hse:department_list' company.id %}" class="btn btn-sm btn-outline-info">
+                    مدیریت بخش‌ها
+                </a>
+            </div>
+            <div class="card-body">
+                {% if departments %}
+                <div class="list-group">
+                    {% for dept in departments|slice:":5" %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ dept.name }}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-users me-1"></i>
+                                    {{ dept.employee_count }} کارمند
+                                </small>
+                            </div>
+                            {% if dept.manager %}
+                            <span class="badge bg-info">{{ dept.manager.user.get_full_name|default:dept.manager.user.mobileNumber }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if departments.count > 5 %}
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        و {{ departments.count|add:"-5" }} بخش دیگر...
+                    </small>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-sitemap fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">هنوز بخشی ایجاد نشده است</p>
+                    <a href="{% url 'hse:department_create' company.id %}" class="btn btn-sm btn-info mt-2">
+                        ایجاد بخش جدید
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- اعضای شرکت -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-users text-success me-2"></i>اعضای شرکت</h6>
+                <a href="{% url 'hse:member_list' company.id %}" class="btn btn-sm btn-outline-success">
+                    مدیریت اعضا
+                </a>
+            </div>
+            <div class="card-body">
+                {% if members %}
+                <div class="list-group">
+                    {% for member in members|slice:":5" %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ member.user.get_full_name|default:member.user.mobileNumber }}</h6>
+                                <small class="text-muted">
+                                    {{ member.get_position_display }}
+                                    {% if member.department %}
+                                    • {{ member.department.name }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <span class="badge {% if member.status == 'ACTIVE' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ member.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if members.count > 5 %}
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        و {{ members.count|add:"-5" }} عضو دیگر...
+                    </small>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">هنوز عضوی اضافه نشده است</p>
+                    <a href="{% url 'hse:member_add' company.id %}" class="btn btn-sm btn-success mt-2">
+                        افزودن عضو جدید
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

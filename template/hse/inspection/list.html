@@ -1,0 +1,174 @@
+<!-- templates/hse/inspection/list.html -->
+{% extends 'base.html' %}
+
+{% block title %}بازرسی‌ها - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:inspection_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>بازرسی جدید
+    </a>
+    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="fas fa-filter me-2"></i>فیلتر
+    </button>
+    <div class="dropdown-menu p-3" style="width: 300px;">
+        <form method="get">
+            <div class="mb-3">
+                <label class="form-label">وضعیت:</label>
+                <select name="status" class="form-select">
+                    <option value="">همه</option>
+                    {% for value, label in inspection_status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">اولویت:</label>
+                <select name="priority" class="form-select">
+                    <option value="">همه</option>
+                    {% for value, label in inspection_priority_choices %}
+                    <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">بخش:</label>
+                <select name="department" class="form-select">
+                    <option value="">همه</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if department_filter == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">اعمال فیلتر</button>
+                <a href="{% url 'hse:inspection_list' company.id %}" class="btn btn-outline-secondary">حذف فیلتر</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-clipboard-check text-primary me-2"></i>لیست بازرسی‌ها</h5>
+    </div>
+
+    <div class="card-body">
+        {% if inspections %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>عنوان</th>
+                        <th>بخش</th>
+                        <th>اولویت</th>
+                        <th>وضعیت</th>
+                        <th>مسئول</th>
+                        <th>تاریخ</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inspection in inspections %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'hse:inspection_detail' company.id inspection.id %}">
+                                {{ inspection.title }}
+                            </a>
+                            {% if inspection.description %}
+                            <small class="text-muted d-block">{{ inspection.description|truncatechars:50 }}</small>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if inspection.department %}
+                            <span class="badge bg-info">{{ inspection.department.name }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if inspection.priority == 'HIGH' %}
+                            <span class="badge bg-danger">بالا</span>
+                            {% elif inspection.priority == 'MEDIUM' %}
+                            <span class="badge bg-warning">متوسط</span>
+                            {% else %}
+                            <span class="badge bg-success">پایین</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if inspection.status == 'COMPLETED' %}
+                            <span class="badge bg-success">تکمیل شده</span>
+                            {% elif inspection.status == 'IN_PROGRESS' %}
+                            <span class="badge bg-warning">در حال انجام</span>
+                            {% elif inspection.status == 'DRAFT' %}
+                            <span class="badge bg-secondary">پیش‌نویس</span>
+                            {% else %}
+                            <span class="badge bg-info">{{ inspection.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if inspection.assigned_to %}
+                            {{ inspection.assigned_to.user.full_name }}
+                            {% else %}
+                            <span class="text-muted">تعیین نشده</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ inspection.scheduled_date|date:"Y/m/d" }}
+                            {% if inspection.completed_date %}
+                            <small class="d-block text-success">تکمیل: {{ inspection.completed_date|date:"Y/m/d" }}</small>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'hse:inspection_detail' company.id inspection.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if inspection.status != 'COMPLETED' %}
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-warning dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for value, label in inspection_status_choices %}
+                                        {% if value != inspection.status %}
+                                        <li>
+                                            <form method="post" action="{% url 'hse:inspection_update_status' company.id inspection.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="status" value="{{ value }}">
+                                                <button type="submit" class="dropdown-item">{{ label }}</button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-check fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">هیچ بازرسی‌ای یافت نشد</h5>
+            <p class="text-muted mb-4">برای ایجاد اولین بازرسی، روی دکمه "بازرسی جدید" کلیک کنید.</p>
+            <a href="{% url 'hse:inspection_create' company.id %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>ایجاد بازرسی جدید
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

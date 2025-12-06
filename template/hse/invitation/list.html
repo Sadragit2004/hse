@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hse:invitation_create' company.id %}" class="btn btn-primary">
+    <i class="fas fa-plus me-2"></i>دعوت جدید
+</a>
+<a href="{% url 'hse:company_detail' company.id %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-2"></i>بازگشت به شرکت
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-envelope text-primary me-2"></i>
+                    {{ page_title }}
+                </h5>
+                <small class="text-muted">مدیریت دعوت‌نامه‌های ارسالی</small>
+            </div>
+
+            <div class="card-body">
+                {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if invitations %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th width="200">کاربر دعوت شده</th>
+                                <th>شماره موبایل</th>
+                                <th>سمت</th>
+                                <th>بخش</th>
+                                <th>وضعیت</th>
+                                <th>تاریخ ارسال</th>
+                                <th>انقضا</th>
+                                <th class="text-center">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invitation in invitations %}
+                            <tr>
+                                <td>
+                                    {% if invitation.invited_user %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-2">
+                                            <div class="avatar-title rounded-circle bg-light text-primary">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <strong>{{ invitation.invited_user.get_full_name|default:"-" }}</strong>
+                                            <small class="d-block text-muted">کاربر ثبت‌نام کرده</small>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-2">
+                                            <div class="avatar-title rounded-circle bg-light text-warning">
+                                                <i class="fas fa-user-clock"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <strong class="text-muted">کاربر جدید</strong>
+                                            <small class="d-block text-muted">هنوز ثبت‌نام نکرده</small>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if invitation.invited_user %}
+                                    <span class="badge bg-light text-dark">
+                                        <i class="fas fa-mobile-alt me-1"></i>
+                                        {{ invitation.invited_user.mobileNumber }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-mobile-alt me-1"></i>
+                                        {{ invitation.invited_mobile }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ invitation.get_position_display }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    {% if invitation.department %}
+                                    <span class="badge bg-secondary">
+                                        {{ invitation.department.name }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if invitation.status == 'PENDING' %}
+                                        {% if invitation.is_expired %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-hourglass-end me-1"></i>
+                                            منقضی شده
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ invitation.get_status_display }}
+                                        </span>
+                                        {% endif %}
+                                    {% elif invitation.status == 'ACCEPTED' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>
+                                        {{ invitation.get_status_display }}
+                                    </span>
+                                    {% elif invitation.status == 'REJECTED' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i>
+                                        {{ invitation.get_status_display }}
+                                    </span>
+                                    {% elif invitation.status == 'EXPIRED' %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-hourglass-end me-1"></i>
+                                        {{ invitation.get_status_display }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <div class="text-nowrap">
+                                        {{ invitation.created_at|date:"Y/m/d" }}
+                                        <small class="d-block text-muted">
+                                            {{ invitation.created_at|time }}
+                                        </small>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="text-nowrap">
+                                        {{ invitation.expires_at|date:"Y/m/d" }}
+                                        <small class="d-block text-muted">
+                                            {{ invitation.expires_at|time }}
+                                        </small>
+                                    </div>
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        {% if invitation.status == 'PENDING' and not invitation.is_expired %}
+                                        <a href="#"
+                                           class="btn btn-outline-primary"
+                                           data-bs-toggle="tooltip"
+                                           title="کپی لینک دعوت"
+                                           onclick="copyInvitationLink('{{ invitation.token }}')">
+                                            <i class="fas fa-link"></i>
+                                        </a>
+
+                                        <a href="{% url 'hse:invitation_resend' invitation.id %}"
+                                           class="btn btn-outline-info"
+                                           data-bs-toggle="tooltip"
+                                           title="ارسال مجدد"
+                                           onclick="return confirm('آیا از ارسال مجدد این دعوت مطمئن هستید؟')">
+                                            <i class="fas fa-redo"></i>
+                                        </a>
+
+                                        <a href="{% url 'hse:invitation_cancel' invitation.id %}"
+                                           class="btn btn-outline-danger"
+                                           data-bs-toggle="tooltip"
+                                           title="لغو دعوت"
+                                           onclick="return confirm('آیا از لغو این دعوت مطمئن هستید؟')">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                        {% elif invitation.status == 'PENDING' and invitation.is_expired %}
+                                        <a href="{% url 'hse:invitation_resend' invitation.id %}"
+                                           class="btn btn-outline-success"
+                                           data-bs-toggle="tooltip"
+                                           title="ارسال مجدد"
+                                           onclick="return confirm('آیا از ارسال مجدد این دعوت مطمئن هستید؟')">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </a>
+                                        {% elif invitation.status == 'EXPIRED' %}
+                                        <a href="{% url 'hse:invitation_resend' invitation.id %}"
+                                           class="btn btn-outline-success"
+                                           data-bs-toggle="tooltip"
+                                           title="ارسال مجدد"
+                                           onclick="return confirm('آیا از ارسال مجدد این دعوت مطمئن هستید؟')">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-envelope fa-4x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted mb-3">هنوز هیچ دعوت‌نامه‌ای ارسال نکرده‌اید</h5>
+                    <p class="text-muted mb-4">با ارسال دعوت‌نامه، افراد را به شرکت خود دعوت کنید</p>
+                    <a href="{% url 'hse:invitation_create' company.id %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>ارسال اولین دعوت
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای نمایش لینک دعوت -->
+<div class="modal fade" id="invitationLinkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-link me-2"></i>لینک دعوت
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">لینک دعوت (کلیک کنید تا کپی شود)</label>
+                    <div class="input-group">
+                        <input type="text"
+                               class="form-control"
+                               id="invitationLinkInput"
+                               readonly
+                               style="cursor: pointer;"
+                               onclick="copyToClipboard(this)">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(document.getElementById('invitationLinkInput'))">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        این لینک را برای کاربر مورد نظر ارسال کنید. کاربر با کلیک روی لینک می‌تواند دعوت را بپذیرد یا رد کند.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // فعال‌سازی tooltip
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// کپی لینک دعوت
+function copyInvitationLink(token) {
+    // ساخت لینک کامل
+    const baseUrl = window.location.origin;
+    const acceptUrl = "{% url 'hse:invitation_accept' 'TOKEN_PLACEHOLDER' %}";
+    const link = baseUrl + acceptUrl.replace('TOKEN_PLACEHOLDER', token);
+
+    document.getElementById('invitationLinkInput').value = link;
+
+    const modal = new bootstrap.Modal(document.getElementById('invitationLinkModal'));
+    modal.show();
+}
+
+// کپی به کلیپ‌بورد
+function copyToClipboard(element) {
+    element.select();
+    element.setSelectionRange(0, 99999);
+
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showToast('success', 'لینک دعوت کپی شد');
+        }
+    } catch (err) {
+        // Fallback برای مرورگرهای جدید
+        navigator.clipboard.writeText(element.value).then(() => {
+            showToast('success', 'لینک دعوت کپی شد');
+        });
+    }
+}
+
+// نمایش toast ساده
+function showToast(type, message) {
+    // اگر toastr موجود است استفاده کن
+    if (typeof toastr !== 'undefined') {
+        toastr[type](message);
+    } else {
+        // ایجاد toast ساده
+        const toastHtml = `
+            <div class="toast-container position-fixed top-0 end-0 p-3">
+                <div class="toast align-items-center text-bg-${type} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const container = document.createElement('div');
+        container.innerHTML = toastHtml;
+        document.body.appendChild(container);
+
+        const toastElement = container.querySelector('.toast');
+        const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+        toast.show();
+
+        toastElement.addEventListener('hidden.bs.toast', function () {
+            container.remove();
+        });
+    }
+}
+</script>
+
+<style>
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-title {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge {
+    font-size: 0.85em;
+    padding: 0.35em 0.65em;
+}
+
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

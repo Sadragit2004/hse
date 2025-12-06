@@ -1,0 +1,241 @@
+{% extends "account_template.html" %}
+
+{% block content %}
+<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8 bg-black min-h-screen">
+  <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+    <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500" alt="Your Company" class="mx-auto h-10 w-auto" />
+    <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">کد تأیید را وارد کنید</h2>
+
+    <div class="mt-4 text-center">
+      <p class="text-sm text-gray-400">کد به شماره <span class="text-white font-medium">{{ mobile }}</span> ارسال شد</p>
+    </div>
+  </div>
+
+  <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+    <form method="POST" class="space-y-8">
+      {% csrf_token %}
+
+      <!-- کد تأیید -->
+      <div>
+        <label class="block text-sm/6 font-medium text-white text-right mb-4">کد ۵ رقمی</label>
+        <div class="flex justify-center gap-3" dir="ltr">
+          <input type="text" name="code1" maxlength="1" inputmode="numeric" class="w-14 h-14 rounded-lg bg-gray-900 border border-gray-700 text-white text-center text-xl font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" autocomplete="off" autofocus>
+          <input type="text" name="code2" maxlength="1" inputmode="numeric" class="w-14 h-14 rounded-lg bg-gray-900 border border-gray-700 text-white text-center text-xl font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" autocomplete="off">
+          <input type="text" name="code3" maxlength="1" inputmode="numeric" class="w-14 h-14 rounded-lg bg-gray-900 border border-gray-700 text-white text-center text-xl font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" autocomplete="off">
+          <input type="text" name="code4" maxlength="1" inputmode="numeric" class="w-14 h-14 rounded-lg bg-gray-900 border border-gray-700 text-white text-center text-xl font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" autocomplete="off">
+          <input type="text" name="code5" maxlength="1" inputmode="numeric" class="w-14 h-14 rounded-lg bg-gray-900 border border-gray-700 text-white text-center text-xl font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" autocomplete="off">
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="mt-4 text-center">
+            {% for error in form.non_field_errors %}
+              <p class="text-sm text-red-500">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- تایمر -->
+      <div class="text-center">
+        <div id="timer" class="text-indigo-400 text-sm font-medium">
+          زمان باقی‌مانده: <span id="time">{{ remaining_time|default:"02:00" }}</span>
+        </div>
+      </div>
+
+      <!-- دکمه تأیید -->
+      <div>
+        <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-3 text-sm/6 font-semibold text-white hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors">
+          تأیید و ورود
+        </button>
+      </div>
+    </form>
+
+    <!-- ارسال مجدد کد -->
+    <div class="mt-8 text-center">
+      <form method="POST" id="resend-form" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="resend" value="true">
+        <button type="submit" id="resend-btn" {% if not can_resend %}disabled{% endif %} class="{% if can_resend %}text-indigo-400 hover:text-indigo-300 cursor-pointer{% else %}text-gray-500 cursor-not-allowed{% endif %} text-sm font-medium transition-colors">
+          {% if can_resend %}
+            ارسال مجدد کد
+          {% else %}
+            ارسال مجدد کد (<span id="countdown">{{ remaining_seconds|default:120 }}</span>)
+          {% endif %}
+        </button>
+      </form>
+
+      <span class="text-gray-500 mx-2">•</span>
+
+      <a href="{% url 'account:send_mobile' %}" class="text-gray-400 hover:text-gray-300 text-sm font-medium transition-colors">
+        تغییر شماره موبایل
+      </a>
+    </div>
+
+    {% if messages %}
+      <div class="mt-6 text-center">
+        {% for message in messages %}
+          <p class="text-sm {% if message.tags == 'error' %}text-red-500{% else %}text-green-500{% endif %}">
+            {{ message }}
+          </p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const inputs = document.querySelectorAll('input[type="text"]');
+  const timerElement = document.getElementById('time');
+  const countdownElement = document.getElementById('countdown');
+  const resendBtn = document.getElementById('resend-btn');
+  const timerDisplay = document.getElementById('timer');
+
+  // زمان باقی‌مانده از سرور
+  let timeLeft = {{ remaining_seconds|default:120 }};
+  const canResend = {{ can_resend|yesno:"true,false" }};
+
+  // اگر زمان تمام شده، نیازی به تایمر نیست
+  if (canResend) {
+    resendBtn.disabled = false;
+    resendBtn.classList.remove('text-gray-500', 'cursor-not-allowed');
+    resendBtn.classList.add('text-indigo-400', 'hover:text-indigo-300', 'cursor-pointer');
+    if (countdownElement) {
+      countdownElement.textContent = "0";
+    }
+    if (timerElement) {
+      timerElement.textContent = "00:00";
+      timerElement.classList.add('text-red-500');
+    }
+    if (timerDisplay) {
+      timerDisplay.classList.add('text-red-500');
+      timerDisplay.classList.remove('text-indigo-400');
+    }
+  } else if (timeLeft > 0) {
+    // تایمر فقط زمانی اجرا شود که زمان باقی‌مانده وجود دارد
+    function updateTimer() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+
+      if (timerElement) {
+        timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+      if (countdownElement) {
+        countdownElement.textContent = timeLeft;
+      }
+
+      if (timeLeft > 0) {
+        timeLeft--;
+        setTimeout(updateTimer, 1000);
+      } else {
+        if (timerElement) {
+          timerElement.textContent = "00:00";
+          timerElement.classList.add('text-red-500');
+        }
+        if (timerDisplay) {
+          timerDisplay.classList.add('text-red-500');
+          timerDisplay.classList.remove('text-indigo-400');
+        }
+        if (resendBtn) {
+          resendBtn.disabled = false;
+          resendBtn.classList.remove('text-gray-500', 'cursor-not-allowed');
+          resendBtn.classList.add('text-indigo-400', 'hover:text-indigo-300', 'cursor-pointer');
+          if (countdownElement) {
+            countdownElement.textContent = "0";
+          }
+          // به روز رسانی متن دکمه
+          const buttonText = resendBtn.innerHTML;
+          resendBtn.innerHTML = buttonText.replace(/ارسال مجدد کد \(\d+\)/, 'ارسال مجدد کد');
+        }
+      }
+    }
+
+    // شروع تایمر
+    updateTimer();
+  }
+
+  // مدیریت ورود کد - از چپ به راست
+  inputs.forEach((input, index) => {
+    // فقط اعداد قبول کن
+    input.addEventListener('input', function(e) {
+      this.value = this.value.replace(/[^0-9]/g, '');
+
+      // اگر عدد وارد شد به فیلد بعدی (راست) برو
+      if (this.value.length === 1 && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+        inputs[index + 1].select();
+      }
+    });
+
+    // پشتیبانی از backspace - به فیلد قبلی (چپ) برو
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value === '' && index > 0) {
+        inputs[index - 1].focus();
+        inputs[index - 1].select();
+      }
+    });
+
+    // پشتیبانی از arrow keys
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft' && index > 0) {
+        inputs[index - 1].focus();
+        inputs[index - 1].select();
+      } else if (e.key === 'ArrowRight' && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+        inputs[index + 1].select();
+      }
+    });
+
+    // پشتیبانی از paste
+    input.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
+
+      if (pastedData.length === 5) {
+        inputs.forEach((input, i) => {
+          if (i < 5) {
+            input.value = pastedData[i] || '';
+          }
+        });
+        inputs[4].focus();
+        inputs[4].select();
+      }
+    });
+
+    // انتخاب متن هنگام فوکوس
+    input.addEventListener('focus', function() {
+      this.select();
+    });
+  });
+});
+
+// وقتی فرم ارسال مجدد ارسال شد، تایمر رو ریست کن
+document.getElementById('resend-form').addEventListener('submit', function(event) {
+  // اگر دکمه غیرفعال است، از ارسال فرم جلوگیری کن
+  if (document.getElementById('resend-btn').disabled) {
+    event.preventDefault();
+  }
+});
+</script>
+
+<style>
+#resend-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#resend-btn:not(:disabled):hover {
+  color: #a5b4fc;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+</style>
+{% endblock content %}

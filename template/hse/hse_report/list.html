@@ -1,0 +1,146 @@
+<!-- templates/hse/hse_report/list.html -->
+{% extends 'base.html' %}
+
+{% block title %}گزارش‌های HSE - {{ company.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'hse:hse_report_create' company.id %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>گزارش جدید
+    </a>
+    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="fas fa-filter me-2"></i>فیلتر
+    </button>
+    <div class="dropdown-menu p-3" style="width: 300px;">
+        <form method="get">
+            <div class="mb-3">
+                <label class="form-label">نوع گزارش:</label>
+                <select name="report_type" class="form-select">
+                    <option value="">همه</option>
+                    {% for value, label in report_type_choices %}
+                    <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">دوره:</label>
+                <select name="period" class="form-select">
+                    <option value="">همه</option>
+                    <option value="daily" {% if period_filter == 'daily' %}selected{% endif %}>روزانه</option>
+                    <option value="weekly" {% if period_filter == 'weekly' %}selected{% endif %}>هفتگی</option>
+                    <option value="monthly" {% if period_filter == 'monthly' %}selected{% endif %}>ماهانه</option>
+                    <option value="quarterly" {% if period_filter == 'quarterly' %}selected{% endif %}>سه‌ماهه</option>
+                    <option value="yearly" {% if period_filter == 'yearly' %}selected{% endif %}>سالانه</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">بخش:</label>
+                <select name="department" class="form-select">
+                    <option value="">همه</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if department_filter == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">اعمال فیلتر</button>
+                <a href="{% url 'hse:hse_report_list' company.id %}" class="btn btn-outline-secondary">حذف فیلتر</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-chart-bar text-primary me-2"></i>گزارش‌های HSE</h5>
+    </div>
+
+    <div class="card-body">
+        {% if reports %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>عنوان گزارش</th>
+                        <th>نوع</th>
+                        <th>دوره</th>
+                        <th>بخش</th>
+                        <th>تاریخ شروع</th>
+                        <th>تاریخ پایان</th>
+                        <th>ایجاد کننده</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'hse:hse_report_detail' company.id report.id %}">
+                                {{ report.title }}
+                            </a>
+                            {% if report.description %}
+                            <small class="text-muted d-block">{{ report.description|truncatechars:50 }}</small>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <span class="badge bg-info">{{ report.get_report_type_display }}</span>
+                        </td>
+
+                        <td>
+                            {% if report.period == 'daily' %}
+                            <span class="badge bg-success">روزانه</span>
+                            {% elif report.period == 'weekly' %}
+                            <span class="badge bg-primary">هفتگی</span>
+                            {% elif report.period == 'monthly' %}
+                            <span class="badge bg-warning text-dark">ماهانه</span>
+                            {% elif report.period == 'quarterly' %}
+                            <span class="badge bg-info">سه‌ماهه</span>
+                            {% elif report.period == 'yearly' %}
+                            <span class="badge bg-danger">سالانه</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if report.department %}
+                            <span class="badge bg-secondary">{{ report.department.name }}</span>
+                            {% else %}
+                            <span class="text-muted">کل شرکت</span>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ report.start_date|date:"Y/m/d" }}</td>
+                        <td>{{ report.end_date|date:"Y/m/d" }}</td>
+
+                        <td>{{ report.created_by.get_full_name|default:"-" }}</td>
+
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'hse:hse_report_detail' company.id report.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-info">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">هیچ گزارشی یافت نشد</h5>
+            <p class="text-muted mb-4">برای ایجاد اولین گزارش HSE، روی دکمه "گزارش جدید" کلیک کنید.</p>
+            <a href="{% url 'hse:hse_report_create' company.id %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>ایجاد گزارش جدید
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
