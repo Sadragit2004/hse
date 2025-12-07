@@ -1,4 +1,3 @@
-<!-- templates/hse/base.html -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -6,30 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}سیستم HSE{% endblock %}</title>
 
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #2c3e50;
-            --secondary: #34495e;
-            --success: #27ae60;
-            --danger: #e74c3c;
-            --warning: #f39c12;
-            --info: #3498db;
+            /* Palette مدرن‌تر */
+            --primary: #007bff;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+
+            /* رنگ‌های پنل */
+            --sidebar-bg: #212529;
+            --sidebar-link-hover: rgba(255, 255, 255, 0.1);
+            --sidebar-active: #007bff;
+            --bg-light: #f8f9fa;
         }
 
         body {
-            font-family: 'Vazir', 'Segoe UI', sans-serif;
-            background: #f5f7fa;
+            font-family: 'Vazirmatn', sans-serif;
+            background: var(--bg-light);
+            color: #333;
         }
 
+        /* ------------------------------------------------------------------ */
+        /* 💡 استایل‌های ریسپانسیو (کلید بهینه‌سازی موبایل) */
+        /* ------------------------------------------------------------------ */
         .sidebar {
-            background: var(--primary);
+            background: var(--sidebar-bg);
             color: white;
             min-height: 100vh;
             width: 250px;
@@ -37,218 +46,249 @@
             right: 0;
             top: 0;
             transition: all 0.3s;
+            z-index: 1050;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
         }
 
         .main-content {
-            margin-right: 250px;
+            margin-right: 250px; /* فضای رزرو شده سایدبار در دسکتاپ */
             padding: 20px;
             transition: all 0.3s;
+        }
+
+        /* Overlay برای موبایل */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            transition: opacity 0.3s;
         }
 
         @media (max-width: 768px) {
+            /* 1. پنهان کردن سایدبار در موبایل */
             .sidebar {
                 right: -250px;
             }
+
+            /* 2. باز کردن سایدبار در موبایل */
             .sidebar.active {
                 right: 0;
             }
+
+            /* 3. حذف حاشیه‌ی رزرو شده در موبایل */
             .main-content {
                 margin-right: 0;
             }
+
+            /* 4. نمایش Overlay هنگام باز بودن سایدبار */
+            .sidebar.active ~ .sidebar-overlay {
+                display: block;
+            }
+
+            /* 5. دکمه Toggle همیشه در موبایل نمایش داده شود */
+            .navbar-brand {
+                order: 3; /* انتقال عنوان به سمت چپ برای RTL */
+            }
+            .navbar-nav-scroll {
+                max-width: 70%; /* برای جلوگیری از سرریز شدن محتوا در موبایل */
+            }
+
+            /* 6. کارت‌ها در موبایل همیشه 100% عرض بگیرند (در صورت نیاز به استک شدن) */
+            .row > div[class*="col-"] {
+                margin-bottom: 15px; /* برای فاصله بین کارت‌ها در حالت عمودی */
+            }
+
+            /* مخفی کردن دکمه Toggle داخلی (فقط دکمه بالای صفحه استفاده شود) */
+            #sidebarClose {
+                display: block;
+            }
         }
+
+        /* استایل دسکتاپ (برای اطمینان از نمایش دسکتاپ) */
+        @media (min-width: 769px) {
+             #sidebarClose {
+                display: none !important;
+            }
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* 🎨 استایل‌های بصری (از نسخه قبلی) */
+        /* ------------------------------------------------------------------ */
 
         .nav-link {
-            color: #ecf0f1;
+            color: #adb5bd;
             padding: 12px 20px;
-            margin: 2px 15px;
+            margin: 5px 10px;
             border-radius: 8px;
-            transition: all 0.3s;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
         }
 
-        .nav-link:hover,
-        .nav-link.active {
-            background: rgba(255,255,255,0.1);
+        .nav-link:hover {
             color: white;
+            background: var(--sidebar-link-hover);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.5);
         }
 
         .nav-link i {
-            width: 24px;
+            width: 20px;
             margin-left: 10px;
-        }
-
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            background: white;
-            border-bottom: 1px solid #eee;
-            border-radius: 10px 10px 0 0 !important;
-            padding: 15px 20px;
-            font-weight: 600;
-        }
-
-        .stat-card {
-            padding: 20px;
-            border-radius: 10px;
-            color: white;
             text-align: center;
+            font-size: 1.1rem;
         }
 
-        .stat-card .number {
-            font-size: 2.2rem;
-            font-weight: bold;
-            display: block;
-        }
+        /* بقیه استایل‌های بصری (Card, Stat-Card, Button, Table, etc.) اینجا تکرار می‌شوند */
+        .sidebar .p-4 h4 { font-weight: 700; }
+        .sidebar .nav-link.text-danger { color: var(--danger) !important; }
+        .sidebar .nav-link.text-danger:hover { background: rgba(220, 53, 69, 0.1); color: var(--danger) !important; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); margin-bottom: 25px; }
+        .card-header { background: white; border-bottom: 1px solid #eee; border-radius: 12px 12px 0 0 !important; padding: 15px 20px; font-weight: 600; font-size: 1.1rem; color: var(--primary); }
+        .stat-card { padding: 25px; border-radius: 12px; color: white; text-align: right; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .stat-card .number { font-size: 2.5rem; font-weight: bold; display: block; }
+        .stat-card .title { opacity: 0.8; font-size: 0.9rem; }
+        .stat-card i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 4rem; opacity: 0.2; }
+        .badge { padding: 7px 14px; border-radius: 50px; font-weight: 600; font-size: 0.85rem; }
+        .btn { border-radius: 8px; padding: 10px 25px; font-weight: 500; transition: all 0.2s; }
+        .table { border-radius: 10px; overflow: hidden; }
+        .table th { background: #e9ecef; color: #495057; font-weight: 600; border-bottom: 2px solid #dee2e6; }
+        .form-control, .form-select { border-radius: 8px; padding: 10px 15px; border: 1px solid #ced4da; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+        .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); }
+        .alert { border-radius: 10px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-weight: 500; }
+        .navbar { border-radius: 12px !important; padding: 10px 20px; }
+        .page-title-container h2 { font-weight: 700; color: #212529; font-size: 1.8rem; }
+        .dropdown-menu { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        /* استایل‌های آکاردئون (زیرمنو) */
+        .accordion-button { background: transparent !important; color: #adb5bd !important; box-shadow: none !important; padding: 12px 20px; font-weight: 500; }
+        .accordion-button:not(.collapsed) { color: white !important; background: var(--sidebar-link-hover) !important; }
+        .accordion-collapse { border: none !important; }
+        .accordion-body { padding: 0; }
+        .accordion-body .nav-link { padding-right: 40px; font-size: 0.95rem; }
 
-        .stat-card i {
-            font-size: 2.5rem;
-            opacity: 0.9;
-        }
-
-        .badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 500;
-        }
-
-        .btn {
-            border-radius: 8px;
-            padding: 8px 20px;
-        }
-
-        .table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            border-bottom: 2px solid #dee2e6;
-        }
-
-        .form-control, .form-select {
-            border-radius: 8px;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-        }
-
-        .alert {
-            border-radius: 8px;
-            border: none;
-        }
-
-        .pagination {
-            justify-content: center;
-        }
-
-        .page-link {
-            border-radius: 6px;
-            margin: 0 3px;
-        }
     </style>
 </head>
-<body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="p-3">
-            <h4 class="text-white">
-                <i class="fas fa-shield-alt"></i>
-                سیستم HSE
-            </h4>
-            <small class="text-white-50">مدیریت ایمنی و بهداشت</small>
-        </div>
+<body style=" font-family: 'Vazirmatn', sans-serif;">
 
-        <hr class="bg-white mx-3">
+    <div class="sidebar">
+        <div class="p-4 d-flex justify-content-between align-items-center">
+            <h4 class="text-white mb-0">
+                <i class="fas fa-shield-alt text-primary me-2"></i>
+                HSE
+            </h4>
+             <button class="btn btn-outline-light d-md-none" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <small class="text-white-50 px-4">مدیریت ایمنی و بهداشت</small>
+
+
+        <hr class="border-secondary mx-3">
 
         <nav class="nav flex-column">
+
             {% if company %}
-            <!-- داشبورد -->
             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
                href="{% url 'hse:dashboard' company.id %}">
                 <i class="fas fa-tachometer-alt"></i>
                 داشبورد
             </a>
 
-            <!-- شرکت‌ها -->
-            <a class="nav-link {% if 'company' in request.resolver_match.url_name %}active{% endif %}"
-               href="{% url 'hse:company_detail' company.id %}">
-                <i class="fas fa-building"></i>
-                شرکت
-            </a>
-
-            <!-- بخش‌ها -->
-            <a class="nav-link {% if 'department' in request.resolver_match.url_name %}active{% endif %}"
-               href="{% url 'hse:department_list' company.id %}">
-                <i class="fas fa-sitemap"></i>
-                بخش‌ها
-            </a>
-
-            <!-- اعضا -->
-            <a class="nav-link {% if 'member' in request.resolver_match.url_name %}active{% endif %}"
-               href="{% url 'hse:member_list' company.id %}">
-                <i class="fas fa-users"></i>
-                اعضا
-            </a>
-
-            <!-- بازرسی‌ها -->
+            <div class="accordion accordion-flush" id="sidebarAccordion">
+                <div class="accordion-item" style="background-color: transparent; border: none;">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed nav-link d-block text-end" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStructure" aria-expanded="false" aria-controls="collapseStructure">
+                            <i class="fas fa-building float-end me-1 mt-1"></i>
+                            ساختار سازمانی
+                            <i class="fas fa-chevron-down float-start mt-1" style="font-size: 0.7rem;"></i>
+                        </button>
+                    </h2>
+                    <div id="collapseStructure" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body">
+                            <a class="nav-link {% if 'company_detail' in request.resolver_match.url_name %}active-sub{% endif %}"
+                               href="{% url 'hse:company_detail' company.id %}" >
+                                <i class="fas fa-info-circle"></i>
+                                جزئیات شرکت
+                            </a>
+                            <a class="nav-link {% if 'department' in request.resolver_match.url_name %}active-sub{% endif %}"
+                               href="{% url 'hse:department_list' company.id %}" >
+                                <i class="fas fa-sitemap"></i>
+                                لیست بخش‌ها
+                            </a>
+                            <a class="nav-link {% if 'member' in request.resolver_match.url_name and 'invitation' not in request.resolver_match.url_name %}active-sub{% endif %}"
+                               href="{% url 'hse:member_list' company.id %}" >
+                                <i class="fas fa-users"></i>
+                                اعضای شرکت
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <a class="nav-link {% if 'inspection' in request.resolver_match.url_name %}active{% endif %}"
                href="{% url 'hse:inspection_list' company.id %}">
                 <i class="fas fa-clipboard-check"></i>
                 بازرسی‌ها
             </a>
 
-            <!-- حوادث -->
             <a class="nav-link {% if 'incident' in request.resolver_match.url_name %}active{% endif %}"
                href="{% url 'hse:incident_list' company.id %}">
                 <i class="fas fa-exclamation-triangle"></i>
                 حوادث
             </a>
 
-            <!-- وظایف -->
             <a class="nav-link {% if 'task' in request.resolver_match.url_name %}active{% endif %}"
                href="{% url 'hse:task_list' company.id %}">
                 <i class="fas fa-tasks"></i>
                 وظایف
             </a>
 
+            <hr class="border-secondary mx-3 my-2">
 
+            <a class="nav-link {% if 'training' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:training_create' company.id %}">
+                <i class="fas fa-graduation-cap"></i>
+                آموزش‌ها
+            </a>
 
-            <!-- دعوت‌نامه‌ها -->
             <a class="nav-link {% if 'invitation' in request.resolver_match.url_name %}active{% endif %}"
-                href="{% url 'hse:invitation_list' company.id %}">
-                <i class="fas fa-envelope"></i>
-                    دعوت عضو
+               href="{% url 'hse:invitation_list' company.id %}">
+                <i class="fas fa-user-plus"></i>
+                دعوت و عضویت
             </a>
-            <!-- دعوت‌نامه‌ها -->
-            <a class="nav-link {% if 'invitation' in request.resolver_match.url_name %}active{% endif %}"
-                href="{% url 'hse:training_create' company.id %}">
-                <i class="fas fa-envelope"></i>
-                   اضافه کردن اموزش
+
+            <a class="nav-link {% if 'ai_assistant' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'hse:ai_assistant' %}">
+                <i class="fas fa-robot"></i>
+                مشاور هوش مصنوعی
             </a>
-            <a class="nav-link {% if 'invitation' in request.resolver_match.url_name %}active{% endif %}"
-                href="{% url 'hse:ai_assistant' %}">
-                <i class="fas fa-envelope"></i>
-                     مشاور هوش مصنوعی
-            </a>
+
             {% endif %}
 
-            <!-- اعلان‌ها -->
+            <hr class="border-secondary mx-3 my-2">
+
             <a class="nav-link {% if 'notification' in request.resolver_match.url_name %}active{% endif %}"
                href="{% url 'hse:notification_list' %}">
                 <i class="fas fa-bell"></i>
                 اعلان‌ها
-                <span id="notification-badge" class="badge bg-danger" style="display: none;">0</span>
+                <span id="notification-badge" class="badge bg-danger ms-auto" style="display: none; margin-right: 0;">0</span>
             </a>
 
-            <!-- لیست شرکت‌ها -->
             <a class="nav-link {% if request.resolver_match.url_name == 'company_list' %}active{% endif %}"
                href="{% url 'hse:company_list' %}">
                 <i class="fas fa-list"></i>
                 شرکت‌های من
             </a>
 
-            <!-- خروج -->
-            <div class="mt-4 pt-3 border-top">
+            <div class="mt-auto pt-3 border-top border-secondary mx-3">
                 <a class="nav-link text-danger" href="#">
                     <i class="fas fa-sign-out-alt"></i>
                     خروج
@@ -257,29 +297,27 @@
         </nav>
     </div>
 
-    <!-- Main Content -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="main-content">
-        <!-- Top Bar -->
         <nav class="navbar navbar-light bg-white rounded-3 shadow-sm mb-4">
             <div class="container-fluid">
-                <!-- Sidebar Toggle Button (Mobile) -->
-                <button class="btn btn-outline-primary d-md-none" id="sidebarToggle">
+                <button class="btn btn-outline-secondary d-md-none" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
 
-                <!-- Page Title -->
-                <div class="navbar-brand">
-                    <i class="fas fa-building text-primary me-2"></i>
-                    {% if company %}{{ company.name }}{% else %}سیستم HSE{% endif %}
+                <div class="navbar-brand me-auto ms-3">
+                    <h5 class="mb-0 text-primary">
+                        {% if company %}<i class="fas fa-industry me-2"></i>{{ company.name }}{% else %}<i class="fas fa-shield-alt me-2"></i>سیستم HSE{% endif %}
+                    </h5>
                 </div>
 
-                <!-- User Info -->
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-user me-2"></i>
-                        {{ request.user.get_full_name|default:request.user.name }}
+                        {{ request.user.get_full_name|default:request.user.name|default:"کاربر" }}
                     </button>
-                    <ul class="dropdown-menu">
+                    <ul class="dropdown-menu dropdown-menu-start">
                         <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>پروفایل</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>خروج</a></li>
@@ -288,60 +326,87 @@
             </div>
         </nav>
 
-        <!-- Messages -->
         {% if messages %}
         <div class="messages mb-4">
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close me-auto" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             {% endfor %}
         </div>
         {% endif %}
 
-        <!-- Page Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 page-title-container">
             <h2 class="mb-0">
-                {% block page_title %}{{ page_title|default:"سیستم HSE" }}{% endblock %}
+                {% block page_title %}{{ page_title|default:"داشبورد اصلی" }}{% endblock %}
             </h2>
             {% block page_actions %}{% endblock %}
         </div>
 
-        <!-- Main Content -->
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        // Sidebar Toggle for Mobile
-        $('#sidebarToggle').click(function() {
-            $('.sidebar').toggleClass('active');
-        });
+        // 💡 منطق جدید جاوا اسکریپت برای مدیریت سایدبار موبایل و Overlay
+        $(document).ready(function() {
+            const sidebar = $('.sidebar');
+            const sidebarToggle = $('#sidebarToggle');
+            const sidebarClose = $('#sidebarClose');
+            const sidebarOverlay = $('#sidebarOverlay');
 
-        // Auto-hide alerts after 5 seconds
-        setTimeout(function() {
-            $('.alert').alert('close');
-        }, 5000);
-
-        // Update notification badge
-        function updateNotificationBadge() {
-            $.get('{% url "hse:notification_count" %}', function(data) {
-                const badge = $('#notification-badge');
-                if (data.count > 0) {
-                    badge.text(data.count).show();
+            function toggleSidebar() {
+                sidebar.toggleClass('active');
+                if (sidebar.hasClass('active')) {
+                    // جلوگیری از اسکرول بدنه زیر سایدبار
+                    $('body').css('overflow', 'hidden');
                 } else {
-                    badge.hide();
+                    $('body').css('overflow', 'auto');
+                }
+            }
+
+            // باز کردن سایدبار با دکمه بالا
+            sidebarToggle.on('click', toggleSidebar);
+
+            // بستن سایدبار با دکمه Close (X) داخل سایدبار
+            sidebarClose.on('click', toggleSidebar);
+
+            // بستن سایدبار با کلیک روی Overlay
+            sidebarOverlay.on('click', toggleSidebar);
+
+            // بستن سایدبار هنگام کلیک روی هر لینک در موبایل
+            $('.nav-link').on('click', function() {
+                if ($(window).width() <= 768) {
+                    // تاخیر کوتاه برای نمایش تغییر صفحه قبل از بستن
+                    setTimeout(toggleSidebar, 200);
                 }
             });
-        }
 
-        $(document).ready(function() {
+            // -----------------------------------------------------
+            // منطق نوتیفیکیشن
+            // -----------------------------------------------------
+            function updateNotificationBadge() {
+                $.get('{% url "hse:notification_count" %}', function(data) {
+                    const badge = $('#notification-badge');
+                    if (data.count > 0) {
+                        badge.text(data.count).show();
+                    } else {
+                        badge.hide();
+                    }
+                });
+            }
+
             updateNotificationBadge();
+            // 30 ثانیه
             setInterval(updateNotificationBadge, 30000);
+
+            // Auto-hide alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
         });
     </script>
 
