@@ -1,0 +1,560 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل خدمات  </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #0d47a1;
+            --accent-color: #ff6b35;
+            --light-color: #f8f9fa;
+            --dark-color: #333;
+            --gray-color: #6c757d;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            color: var(--secondary-color);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .header h1::after {
+            content: '';
+            position: absolute;
+            width: 70px;
+            height: 4px;
+            background-color: var(--accent-color);
+            bottom: -10px;
+            right: 50%;
+            transform: translateX(50%);
+            border-radius: 2px;
+        }
+
+        .header p {
+            color: var(--gray-color);
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 20px auto 0;
+        }
+
+        .filter-tabs {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+
+        .filter-btn {
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            color: var(--dark-color);
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .filter-btn.active {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .service-card {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card-header i {
+            font-size: 1.8rem;
+            background-color: rgba(255, 255, 255, 0.2);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-header h3 {
+            font-size: 1.3rem;
+            flex: 1;
+        }
+
+        .card-body {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .service-description {
+            color: var(--gray-color);
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .service-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .tag {
+            background-color: #e8f4fd;
+            color: var(--primary-color);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .card-footer {
+            padding: 15px 20px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .service-price {
+            font-weight: 700;
+            color: var(--accent-color);
+            font-size: 1.2rem;
+        }
+
+        .service-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: var(--transition);
+        }
+
+        .service-link:hover {
+            color: var(--secondary-color);
+            gap: 10px;
+        }
+
+        .stats-section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-top: 40px;
+        }
+
+        .stats-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--secondary-color);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: var(--gray-color);
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .filter-tabs {
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>خدمات تخصصی  </h1>
+            <p>ارائه خدمات ایمنی، بهداشت و محیط زیست (HSE) با کیفیت برتر و رعایت استانداردهای ملی و بین‌المللی</p>
+        </div>
+
+        <div class="filter-tabs">
+            <button class="filter-btn active" data-filter="all">
+                <i class="fas fa-layer-group"></i> همه خدمات
+            </button>
+            <button class="filter-btn" data-filter="inspection">
+                <i class="fas fa-search"></i> بازرسی فنی
+            </button>
+            <button class="filter-btn" data-filter="fire">
+                <i class="fas fa-fire-extinguisher"></i> آتش نشانی
+            </button>
+            <button class="filter-btn" data-filter="hse">
+                <i class="fas fa-shield-alt"></i> HSE
+            </button>
+            <button class="filter-btn" data-filter="environment">
+                <i class="fas fa-leaf"></i> محیط زیست
+            </button>
+            <button class="filter-btn" data-filter="technical">
+                <i class="fas fa-tools"></i> خدمات فنی
+            </button>
+        </div>
+
+        <div class="services-grid" id="servicesContainer">
+            <!-- خدمات بارگیری شده با JavaScript -->
+        </div>
+
+        <div class="stats-section">
+            <h2 class="stats-title">آمار پروژه‌های انجام شده</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="projectsCount1">0</div>
+                    <div class="stat-label">پروژه بازرسی فنی</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="projectsCount2">0</div>
+                    <div class="stat-label">پروژه آلاینده سنجی</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="projectsCount3">0</div>
+                    <div class="stat-label">پروژه آتش نشانی</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="projectsCount4">0</div>
+                    <div class="stat-label">پروژه خدمات فنی</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // داده‌های خدمات
+        const servicesData = [
+            {
+                id: 1,
+                title: "بازرسی فنی آسانسور و پله‌های برقی",
+                category: "inspection",
+                description: "بازرسی و تست انواع آسانسورها، پله‌ها و پیاده‌روهای برقی، بالابرهای صنعتی و کارگاهی. صدور گواهینامه معتبر.",
+                icon: "fas fa-elevator",
+                tags: ["آسانسور", "پله برقی", "بالابر صنعتی"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/بازرسی-فنی-آسانسور-و-پله-های-برقی/"
+            },
+            {
+                id: 2,
+                title: "بازرسی فنی جرثقیل و لیفتراک",
+                category: "inspection",
+                description: "بازرسی و تست انواع جرثقیل‌های موبایل، سقفی، برجی، دروازه‌ای و لیفتراک، استاکر، پالت تراک.",
+                icon: "fas fa-crane",
+                tags: ["جرثقیل", "لیفتراک", "تست ایمنی"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/بازرسی-فنی-جرثقیل/"
+            },
+            {
+                id: 3,
+                title: "طراحی و نصب سیستم‌های آتش‌نشانی",
+                category: "fire",
+                description: "ارائه خدمات آتش‌نشانی با کیفیت و متمایز بر پایه اصول مهندسی و اخلاق حرفه‌ای به عنوان یک مشاور تخصصی.",
+                icon: "fas fa-fire-extinguisher",
+                tags: ["طراحی", "نصب", "تست سیستم"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/1732/آتش-نشانی/"
+            },
+            {
+                id: 4,
+                title: "سیستم‌های کشف و اعلام حریق",
+                category: "fire",
+                description: "طراحی، نصب و راه‌اندازی سیستم‌های هوشمند کشف و اعلام حریق مطابق با استانداردهای NFPA.",
+                icon: "fas fa-bell",
+                tags: ["کشف حریق", "اعلام حریق", "سیستم هوشمند"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/سیستم-های-کشف-و-اعلام-حریق/"
+            },
+            {
+                id: 5,
+                title: "پیمانکاری HSE",
+                category: "hse",
+                description: "انجام کلیه امور ایمنی، بهداشت و محیط زیست پروژه‌ها و کارگاه‌های تولیدی به عنوان پیمانکار ذی‌صلاح.",
+                icon: "fas fa-hard-hat",
+                tags: ["پیمانکاری", "ایمنی", "بهداشت حرفه‌ای"],
+                price: "مطابق قرارداد",
+                link: "https://maddco.ir/1072/پیمانکاری-اچ-اس-اي-hse/"
+            },
+            {
+                id: 6,
+                title: "استانداردها و الزامات قانونی HSE",
+                category: "hse",
+                description: "مجموعه‌ای کامل از قوانین ملی و بین‌المللی و الزامات تصریحی و تلویحی HSE.",
+                icon: "fas fa-gavel",
+                tags: ["استاندارد", "قانون", "آئین‌نامه"],
+                price: "رایگان",
+                link: "https://maddco.ir/hse/استانداردها-و-الزامات-قانونی-hse/"
+            },
+            {
+                id: 7,
+                title: "سنجش و کنترل آلاینده‌های صنعتی",
+                category: "environment",
+                description: "بررسی، ارزیابی، اندازه‌گیری عوامل زیان‌آور محیط‌های کاری و ارائه طرح‌های کنترلی.",
+                icon: "fas fa-vial",
+                tags: ["آلاینده", "اندازه‌گیری", "کنترل"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/آلاینده-سنجی/"
+            },
+            {
+                id: 8,
+                title: "آزمایشگاه معتمد محیط زیست",
+                category: "environment",
+                description: "سنجش و آنالیز میزان آلودگی‌های هوا، صدا، آب، پساب، خاک و پسماند. انجام طرح‌های ارزیابی زیست محیطی.",
+                icon: "fas fa-flask",
+                tags: ["آزمایشگاه", "محیط زیست", "آنالیز"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/محیط-زیست/"
+            },
+            {
+                id: 9,
+                title: "دوربین‌های مداربسته و دزدگیر اماکن",
+                category: "technical",
+                description: "طراحی، جانمایی و نصب دوربین مدار بسته برای کسب‌وکارها، سازمان‌ها، کارخانجات، مدارس و منازل.",
+                icon: "fas fa-video",
+                tags: ["دوربین مداربسته", "دزدگیر", "نظارت"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/دوربین-مدار-بسته/"
+            },
+            {
+                id: 10,
+                title: "تابلوهای برق صنعتی",
+                category: "technical",
+                description: "طراحی، ساخت و تعمیر تابلوهای برق صنعتی با رعایت استانداردهای ایمنی و کیفیت.",
+                icon: "fas fa-bolt",
+                tags: ["تابلو برق", "صنعتی", "تعمیر"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/تابلوهای-برق-صنعتی/"
+            },
+            {
+                id: 11,
+                title: "سمپاشی و دفع آفات",
+                category: "hse",
+                description: "بهره‌گیری از دانش IPM، تیم تخصصی با تجربه و استفاده از سموم با سمیت پایین برای انسان و محیط زیست.",
+                icon: "fas fa-spray-can",
+                tags: ["سمپاشی", "آفات", "بهداشت محیط"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/سمپاشی-و-دفع-آفات/"
+            },
+            {
+                id: 12,
+                title: "ایمنی کار در ارتفاع",
+                category: "hse",
+                description: "طراحی و اجرای سیستم‌های ایمنی کار در ارتفاع، آموزش و تأمین تجهیزات حفاظت فردی.",
+                icon: "fas fa-mountain",
+                tags: ["کار در ارتفاع", "ایمنی", "تجهیزات حفاظتی"],
+                price: "تماس بگیرید",
+                link: "https://maddco.ir/ایمنی-کار-در-ارتفاع/"
+            }
+        ];
+
+        // تابع برای نمایش خدمات
+        function renderServices(filter = "all") {
+            const container = document.getElementById("servicesContainer");
+            container.innerHTML = "";
+
+            const filteredServices = filter === "all"
+                ? servicesData
+                : servicesData.filter(service => service.category === filter);
+
+            if (filteredServices.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray-color);">هیچ خدمتی در این دسته‌بندی یافت نشد.</div>`;
+                return;
+            }
+
+            filteredServices.forEach(service => {
+                const serviceCard = document.createElement("div");
+                serviceCard.className = "service-card";
+                serviceCard.setAttribute("data-category", service.category);
+
+                serviceCard.innerHTML = `
+                    <div class="card-header">
+                        <i class="${service.icon}"></i>
+                        <h3>${service.title}</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="service-description">${service.description}</p>
+                        <div class="service-tags">
+                            ${service.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="service-price">${service.price}</div>
+                        <a href="${service.link}" target="_blank" class="service-link">
+                            اطلاعات بیشتر
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                    </div>
+                `;
+
+                container.appendChild(serviceCard);
+            });
+        }
+
+        // فیلتر کردن خدمات
+        document.querySelectorAll(".filter-btn").forEach(button => {
+            button.addEventListener("click", function() {
+                // حذف کلاس active از همه دکمه‌ها
+                document.querySelectorAll(".filter-btn").forEach(btn => {
+                    btn.classList.remove("active");
+                });
+
+                // اضافه کردن کلاس active به دکمه کلیک شده
+                this.classList.add("active");
+
+                // اعمال فیلتر
+                const filter = this.getAttribute("data-filter");
+                renderServices(filter);
+            });
+        });
+
+        // آمار پروژه‌ها
+        function animateCounter(elementId, targetValue, duration = 2000) {
+            const element = document.getElementById(elementId);
+            const startValue = 0;
+            const increment = targetValue / (duration / 16); // 60 فریم در ثانیه
+            let currentValue = startValue;
+
+            const timer = setInterval(() => {
+                currentValue += increment;
+                if (currentValue >= targetValue) {
+                    clearInterval(timer);
+                    currentValue = targetValue;
+                }
+                element.textContent = Math.floor(currentValue) + "+";
+            }, 16);
+        }
+
+        // مقداردهی اولیه صفحه
+        document.addEventListener("DOMContentLoaded", function() {
+            renderServices();
+
+            // نمایش آمار با انیمیشن
+            setTimeout(() => {
+                animateCounter("projectsCount1", 1320);
+                animateCounter("projectsCount2", 360);
+                animateCounter("projectsCount3", 172);
+                animateCounter("projectsCount4", 73);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+{% endblock content %}

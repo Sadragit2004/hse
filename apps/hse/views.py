@@ -23,32 +23,60 @@ from .forms import (
     HSEReportForm
 )
 
+from .decorators import login_required_company_member,require_company_access,company_access,company_member_access
 
 # ==================== Company Views ====================
-@login_required
-def company_list(request):
-    """لیست شرکت‌های کاربر"""
-    companies = Company.objects.filter(user=request.user).order_by('-created_at')
 
-    # آمار کلی
+@login_required_company_member
+def company_list(request):
+    """لیست شرکت‌های کاربر (مالک + عضو)"""
+
+    # استفاده از Q objects برای پیدا کردن همه شرکت‌های مرتبط
+    companies = Company.objects.filter(
+        Q(user=request.user) |  # یا مالک باشد
+        Q(members__user=request.user, members__is_active=True)  # یا عضو فعال باشد
+    ).distinct().order_by('-created_at')
+
+    # جمع‌آوری اطلاعات نقش
+    company_info = []
+    for company in companies:
+        if company.user == request.user:
+            role = 'مالک'
+            is_owner = True
+        else:
+            try:
+                member = CompanyMember.objects.get(
+                    company=company,
+                    user=request.user,
+                    is_active=True
+                )
+                role = member.get_position_display()
+                is_owner = False
+            except CompanyMember.DoesNotExist:
+                role = 'عضو'
+                is_owner = False
+
+        company_info.append({
+            'company': company,
+            'role': role,
+            'is_owner': is_owner,
+        })
+
     stats = {
         'total': companies.count(),
         'active': companies.filter(is_active=True).count(),
         'departments': CompanyDepartment.objects.filter(company__in=companies).count(),
-        'members': CompanyMember.objects.filter(company__in=companies).count(),
+        'members': CompanyMember.objects.filter(company__in=companies, is_active=True).count(),
     }
 
-    context = {
-        'companies': companies,
+    return render(request, 'hse/company/list.html', {
+        'company_info': company_info,
         'stats': stats,
         'page_title': 'شرکت‌های من'
-    }
-    return render(request, 'hse/company/list.html', context)
+    })
 
 
-
-
-@login_required
+@login_required_company_member
 @require_http_methods(["DELETE"])
 def company_delete(request, pk):
     """حذف شرکت"""
@@ -81,10 +109,11 @@ def company_delete(request, pk):
         }, status=500)
 
 
-@login_required
+@login_required_company_member
+
 def company_detail(request, company_id):
     """جزئیات شرکت"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     # آمارهای شرکت
     departments = company.departments.filter(is_active=True)
@@ -128,7 +157,7 @@ def company_detail(request, company_id):
     }
     return render(request, 'hse/company/detail.html', context)
 
-@login_required
+@login_required_company_member
 def company_create(request):
     """ایجاد شرکت جدید"""
     # آمار شرکت‌های کاربر
@@ -166,10 +195,10 @@ def company_create(request):
 
 
 
-@login_required
+@login_required_company_member
 def company_edit(request, company_id):
     """ویرایش شرکت"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     if request.method == 'POST':
         form = CompanyForm(request.POST, instance=company)
@@ -188,11 +217,11 @@ def company_edit(request, company_id):
     return render(request, 'hse/company/edit.html', context)
 
 
-@login_required
+@login_required_company_member
 @require_POST
 def company_toggle_active(request, company_id):
     """تغییر وضعیت فعال/غیرفعال شرکت"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     company.is_active = not company.is_active
     company.save()
 
@@ -203,10 +232,10 @@ def company_toggle_active(request, company_id):
 
 
 # ==================== Department Views ====================
-@login_required
+@login_required_company_member
 def department_list(request, company_id):
     """لیست بخش‌های شرکت"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     departments = company.departments.all().order_by('name')
 
     context = {
@@ -217,10 +246,10 @@ def department_list(request, company_id):
     return render(request, 'hse/department/list.html', context)
 
 
-@login_required
+@login_required_company_member
 def department_create(request, company_id):
     """ایجاد بخش جدید"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     if request.method == 'POST':
         form = CompanyDepartmentForm(request.POST)
@@ -241,10 +270,10 @@ def department_create(request, company_id):
     return render(request, 'hse/department/create.html', context)
 
 
-@login_required
+@login_required_company_member
 def department_edit(request, company_id, department_id):
     """ویرایش بخش"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     department = get_object_or_404(CompanyDepartment, id=department_id, company=company)
 
     if request.method == 'POST':
@@ -266,10 +295,10 @@ def department_edit(request, company_id, department_id):
 
 
 # ==================== Company Member Views ====================
-@login_required
+@login_required_company_member
 def member_list(request, company_id):
     """لیست اعضای شرکت"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     members = company.members.all().select_related('user', 'department').order_by('-join_date')
 
     # فیلترها
@@ -295,10 +324,10 @@ def member_list(request, company_id):
     return render(request, 'hse/company/member_list.html', context)
 
 # views.py - به‌روزرسانی member_add
-@login_required
+@login_required_company_member
 def member_add(request, company_id):
     """افزودن عضو به شرکت"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     # کاربران موجود که عضو این شرکت نیستند
     existing_member_ids = company.members.values_list('user_id', flat=True)
@@ -328,7 +357,7 @@ def member_add(request, company_id):
 # ==================== Inspection Views ====================
 
 # apps/hse/views.py
-@login_required
+@login_required_company_member
 def inspection_list(request, company_id):
     company = get_object_or_404(Company, id=company_id)
 
@@ -360,7 +389,7 @@ def inspection_list(request, company_id):
     }
     return render(request, 'hse/inspection/list.html', context)
 
-@login_required
+@login_required_company_member
 def inspection_detail(request, company_id, inspection_id):
     company = get_object_or_404(Company, id=company_id)
     inspection = get_object_or_404(Inspection, id=inspection_id, company=company)
@@ -384,10 +413,10 @@ def inspection_detail(request, company_id, inspection_id):
     return render(request, 'hse/inspection/detail.html', context)
 
 
-@login_required
+@login_required_company_member
 def inspection_create(request, company_id):
     """ایجاد بازرسی جدید"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     if request.method == 'POST':
         form = InspectionForm(request.POST, company=company)
@@ -409,11 +438,11 @@ def inspection_create(request, company_id):
     return render(request, 'hse/inspection/create.html', context)
 
 
-@login_required
+@login_required_company_member
 @require_POST
 def inspection_update_status(request, company_id, inspection_id):
     """بروزرسانی وضعیت بازرسی"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     inspection = get_object_or_404(Inspection, id=inspection_id, company=company)
 
     new_status = request.POST.get('status')
@@ -431,10 +460,10 @@ def inspection_update_status(request, company_id, inspection_id):
 
 # ==================== Incident Views ====================
 
-@login_required
+@login_required_company_member
 def incident_list(request, company_id):
     """لیست حوادث"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     incidents = company.incidents.all().select_related(
         'department', 'reporter__user'
     ).order_by('-incident_date')
@@ -476,7 +505,7 @@ def incident_list(request, company_id):
     return render(request, 'hse/incident/list.html', context)
 
 # apps/hse/views.py
-@login_required
+@login_required_company_member
 def incident_detail(request, company_id, incident_id):
     company = get_object_or_404(Company, id=company_id)
     incident = get_object_or_404(Incident, id=incident_id, company=company)
@@ -500,10 +529,10 @@ def incident_detail(request, company_id, incident_id):
     return render(request, 'hse/incident/detail.html', context)
 
 
-@login_required
+@login_required_company_member
 def incident_create(request, company_id):
     """گزارش حادثه جدید"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     if request.method == 'POST':
         form = IncidentForm(request.POST, company=company)
@@ -533,10 +562,10 @@ def incident_create(request, company_id):
 
 
 # ==================== Task Views ====================
-@login_required
+@login_required_company_member
 def task_list(request, company_id):
     """لیست وظایف"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     tasks = company.tasks.all().select_related(
         'department', 'assigned_to__user', 'created_by',
         'related_inspection', 'related_incident'
@@ -581,7 +610,7 @@ def task_list(request, company_id):
 # apps/hse/views.py
 from datetime import date
 
-@login_required
+@login_required_company_member
 def task_detail(request, company_id, task_id):
     company = get_object_or_404(Company, id=company_id)
     task = get_object_or_404(Task, id=task_id, company=company)
@@ -618,10 +647,10 @@ def task_detail(request, company_id, task_id):
     }
     return render(request, 'hse/task/detail.html', context)
 
-@login_required
+@login_required_company_member
 def task_create(request, company_id):
     """ایجاد وظیفه جدید"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     if request.method == 'POST':
         form = TaskForm(request.POST, company=company)
@@ -643,11 +672,11 @@ def task_create(request, company_id):
     return render(request, 'hse/task/create.html', context)
 
 
-@login_required
+@login_required_company_member
 @require_POST
 def task_update_status(request, company_id, task_id):
     """بروزرسانی وضعیت وظیفه"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     task = get_object_or_404(Task, id=task_id, company=company)
 
     new_status = request.POST.get('status')
@@ -681,10 +710,10 @@ from .models import (
 
 # ==================== Invitation Views ====================
 
-@login_required
+@login_required_company_member
 def invitation_create(request, company_id):
     """ایجاد دعوت‌نامه جدید"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     if request.method == 'POST':
         mobile = request.POST.get('mobile_number', '').strip()
@@ -779,10 +808,10 @@ def invitation_create(request, company_id):
     return render(request, 'hse/invitation/create.html', context)
 
 
-@login_required
+@login_required_company_member
 def invitation_list(request, company_id):
     """لیست دعوت‌نامه‌های ارسالی"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     invitations = company.invitations.all().select_related(
         'invited_user', 'inviter', 'department'
     ).order_by('-created_at')
@@ -969,7 +998,7 @@ def invitation_reject(request, token):
 
 # ==================== Invitation Management Views ====================
 
-@login_required
+@login_required_company_member
 def invitation_resend(request, invitation_id):
     """ارسال مجدد دعوت"""
     invitation = get_object_or_404(Invitation, id=invitation_id)
@@ -1020,7 +1049,7 @@ def invitation_resend(request, invitation_id):
         return redirect('hse:invitation_list', company_id=invitation.company.id)
 
 
-@login_required
+@login_required_company_member
 def invitation_cancel(request, invitation_id):
     """لغو دعوت توسط مدیر شرکت"""
     invitation = get_object_or_404(Invitation, id=invitation_id)
@@ -1048,7 +1077,7 @@ def invitation_cancel(request, invitation_id):
 
 
 # ==================== Notification Views ====================
-@login_required
+@login_required_company_member
 def notification_list(request):
     """لیست اعلان‌های کاربر با قابلیت پذیرش/رد مستقیم دعوت‌ها"""
     notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
@@ -1108,7 +1137,7 @@ def notification_list(request):
     return render(request, 'hse/notification/list.html', context)
 
 
-@login_required
+@login_required_company_member
 @require_GET
 def notification_count(request):
     """تعداد اعلان‌های خوانده نشده"""
@@ -1117,10 +1146,10 @@ def notification_count(request):
 
 
 # ==================== HSE Report Views ====================
-@login_required
+@login_required_company_member
 def hse_report_list(request, company_id):
     """لیست گزارشات HSE"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     reports = company.hse_reports.all().select_related(
         'prepared_by__user', 'approved_by__user'
     ).order_by('-period_end')
@@ -1133,10 +1162,10 @@ def hse_report_list(request, company_id):
     return render(request, 'hse_report/list.html', context)
 
 
-@login_required
+@login_required_company_member
 def hse_report_detail(request, company_id, report_id):
     """جزئیات گزارش HSE"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     report = get_object_or_404(HSEReport, id=report_id, company=company)
 
     context = {
@@ -1147,10 +1176,10 @@ def hse_report_detail(request, company_id, report_id):
     return render(request, 'hse/hse_report/detail.html', context)
 
 
-@login_required
+@login_required_company_member
 def hse_report_create(request, company_id):
     """ایجاد گزارش HSE جدید"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     if request.method == 'POST':
         form = HSEReportForm(request.POST, company=company)
@@ -1180,10 +1209,10 @@ def hse_report_create(request, company_id):
 
 
 # ==================== Dashboard Views ====================
-@login_required
+@login_required_company_member
 def dashboard(request, company_id):
     """داشبورد اصلی"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     # آمار کلی
     stats = {
@@ -1241,11 +1270,11 @@ def dashboard(request, company_id):
 
 
 # ==================== API Views for AJAX ====================
-@login_required
+@login_required_company_member
 @require_GET
 def get_company_stats(request, company_id):
     """دریافت آمار شرکت برای AJAX"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
 
     # محاسبه آمار
     inspections = company.inspections.all()
@@ -1276,11 +1305,11 @@ def get_company_stats(request, company_id):
     return JsonResponse(stats)
 
 
-@login_required
+@login_required_company_member
 @require_GET
 def search(request, company_id):
     """جستجوی سراسری"""
-    company = get_object_or_404(Company, id=company_id, user=request.user)
+    company = get_object_or_404(Company, id=company_id)
     query = request.GET.get('q', '').strip()
 
     results = {
@@ -1342,7 +1371,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
-@login_required
+@login_required_company_member
 @require_GET
 def search_users(request):
     """جستجوی کاربران برای AJAX"""
@@ -1378,7 +1407,7 @@ def search_users(request):
 from django.contrib.auth.decorators import login_required
 from .models import Invitation, Notification
 
-@login_required
+@login_required_company_member
 def user_pending_invitations(request):
     """نمایش دعوت‌نامه‌های pending کاربر"""
     pending_invitations = Invitation.objects.filter(
@@ -1400,7 +1429,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 import json
 
-@login_required
+@login_required_company_member
 @require_POST
 def mark_all_notifications_read(request):
     """علامت‌گذاری همه اعلان‌های کاربر به عنوان خوانده شده"""
@@ -1422,7 +1451,7 @@ def mark_all_notifications_read(request):
 
 
 
-@login_required
+@login_required_company_member
 @require_GET
 def notification_unread_count(request):
     """تعداد اعلان‌های خوانده نشده (برای navbar)"""
@@ -1430,7 +1459,7 @@ def notification_unread_count(request):
     return JsonResponse({'count': count})
 
 
-@login_required
+@login_required_company_member
 def notification_detail(request, notification_id):
     """جزئیات اعلان"""
     notification = get_object_or_404(Notification, id=notification_id, user=request.user)
@@ -1485,7 +1514,7 @@ from .forms import TrainingCreateForm, TrainingUpdateForm
 # ========== Training URLs ==========
 from .models import Training,TrainingCategory,TrainingParticipation
 
-@login_required
+@login_required_company_member
 def training_list(request, company_id):
     """لیست آموزش‌ها"""
     company = get_object_or_404(Company, id=company_id)
@@ -1519,7 +1548,7 @@ def training_list(request, company_id):
     return render(request, 'hse/training/list.html', context)
 
 
-@login_required
+@login_required_company_member
 def training_create(request, company_id):
     """ایجاد آموزش جدید"""
     company = get_object_or_404(Company, id=company_id)
@@ -1553,7 +1582,7 @@ def training_create(request, company_id):
     return render(request, 'hse/training/create.html', context)
 
 
-@login_required
+@login_required_company_member
 def training_detail(request, company_id, training_id):
     """جزئیات آموزش"""
     company = get_object_or_404(Company, id=company_id)
@@ -1574,7 +1603,7 @@ def training_detail(request, company_id, training_id):
     return render(request, 'hse/training/detail.html', context)
 
 
-@login_required
+@login_required_company_member
 def training_update(request, company_id, training_id):
     """ویرایش آموزش"""
     company = get_object_or_404(Company, id=company_id)
@@ -1609,7 +1638,7 @@ def training_update(request, company_id, training_id):
     return render(request, 'hse/training/update.html', context)
 
 
-@login_required
+@login_required_company_member
 def training_delete(request, company_id, training_id):
     """حذف آموزش"""
     company = get_object_or_404(Company, id=company_id)
@@ -1627,7 +1656,7 @@ def training_delete(request, company_id, training_id):
     return render(request, 'hse/training/delete.html', context)
 
 
-@login_required
+@login_required_company_member
 def training_update_status(request, company_id, training_id):
     """تغییر وضعیت آموزش"""
     company = get_object_or_404(Company, id=company_id)
@@ -1652,7 +1681,7 @@ def training_update_status(request, company_id, training_id):
         return redirect('hse:training_detail', company_id=company.id, training_id=training.id)
 
 
-@login_required
+@login_required_company_member
 def training_register_participant(request, company_id, training_id):
     """ثبت‌نام شرکت‌کننده در آموزش"""
     company = get_object_or_404(Company, id=company_id)
@@ -1681,7 +1710,7 @@ def training_register_participant(request, company_id, training_id):
     return redirect('hse:training_detail', company_id=company.id, training_id=training.id)
 
 
-@login_required
+@login_required_company_member
 def training_update_participation(request, company_id, training_id, participation_id):
     """به‌روزرسانی وضعیت حضور"""
     company = get_object_or_404(Company, id=company_id)
@@ -1724,7 +1753,16 @@ def training_update_participation(request, company_id, training_id, participatio
     return redirect('hse:training_detail', company_id=company.id, training_id=training.id)
 
 
-@login_required
+@login_required_company_member
 def ai_assistant(request):
     """صفحه دستیار هوشمند HSE"""
     return render(request, 'hse/ai/ai.html')
+
+
+
+
+
+
+def serviceLst(request):
+
+    return render(request,'hse/service/servicelist.html')

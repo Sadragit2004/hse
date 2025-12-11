@@ -607,6 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // مقداردهی اولیه
     function init() {
+        console.log('Initializing chat assistant...');
         updateCharCount();
         messageInput.focus();
         loadChatHistory();
@@ -616,6 +617,14 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCharCount();
             autoResizeTextarea(this);
         });
+
+        // اضافه کردن event listener برای جلوگیری از ارسال فرم توسط دکمه‌ها
+        sendBtn.addEventListener('click', handleFormSubmit);
+
+        // رویداد کلیک برای دکمه‌های مثال
+        setupExampleButtons();
+
+        console.log('Chat assistant initialized successfully');
     }
 
     // آپدیت شمارنده کاراکتر
@@ -640,31 +649,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // اسکرول به پایین
     function scrollToBottom() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 100);
     }
 
     // ذخیره تاریخچه چت
     function saveChatHistory() {
-        const messages = chatMessages.querySelectorAll('.chat-message');
-        chatHistory = Array.from(messages).map(msg => ({
-            type: msg.classList.contains('user-message') ? 'user' : 'ai',
-            content: msg.querySelector('.message-text').innerHTML,
-            timestamp: new Date().toISOString()
-        }));
+        try {
+            const messages = chatMessages.querySelectorAll('.chat-message');
+            chatHistory = Array.from(messages).map(msg => ({
+                type: msg.classList.contains('user-message') ? 'user' : 'ai',
+                content: msg.querySelector('.message-text').innerHTML,
+                timestamp: new Date().toISOString()
+            }));
 
-        localStorage.setItem('hseChatHistory', JSON.stringify(chatHistory));
+            localStorage.setItem('hseChatHistory', JSON.stringify(chatHistory));
+            console.log('Chat history saved:', chatHistory.length, 'messages');
+        } catch (error) {
+            console.error('Error saving chat history:', error);
+        }
     }
 
     // بارگذاری تاریخچه چت
     function loadChatHistory() {
-        const saved = localStorage.getItem('hseChatHistory');
-        if (saved) {
-            chatHistory = JSON.parse(saved);
+        try {
+            const saved = localStorage.getItem('hseChatHistory');
+            if (saved) {
+                chatHistory = JSON.parse(saved);
+                console.log('Chat history loaded:', chatHistory.length, 'messages');
+            }
+        } catch (error) {
+            console.error('Error loading chat history:', error);
         }
     }
 
     // افزودن پیام کاربر
     function addUserMessage(text) {
+        console.log('Adding user message:', text);
         const messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message user-message';
 
@@ -691,10 +713,12 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.appendChild(messageDiv);
         scrollToBottom();
         saveChatHistory();
+        console.log('User message added successfully');
     }
 
     // افزودن پیام دستیار
     function addAiMessage(text, actions = null, data = null) {
+        console.log('Adding AI message:', text.substring(0, 50) + '...');
         const messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message ai-message';
 
@@ -737,17 +761,11 @@ document.addEventListener('DOMContentLoaded', function() {
         saveChatHistory();
 
         // اضافه کردن event listener به دکمه‌های جدید
-        if (actions) {
-            const newButtons = messageDiv.querySelectorAll('.quick-question, .action-btn');
-            newButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (this.dataset.question) {
-                        messageInput.value = this.dataset.question;
-                        chatForm.dispatchEvent(new Event('submit'));
-                    }
-                });
-            });
-        }
+        setTimeout(() => {
+            setupMessageActionButtons(messageDiv);
+        }, 100);
+
+        console.log('AI message added successfully');
     }
 
     // رندر داده‌های ساختاریافته
@@ -792,17 +810,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // شبیه‌سازی تایپ دستیار
     function showTypingIndicator() {
+        console.log('Showing typing indicator');
         typingIndicator.classList.remove('d-none');
+        scrollToBottom();
     }
 
     function hideTypingIndicator() {
+        console.log('Hiding typing indicator');
         typingIndicator.classList.add('d-none');
     }
 
     // پردازش سوال و تولید پاسخ
     async function processQuestion(question) {
-        if (isProcessing) return;
+        if (isProcessing) {
+            console.log('Already processing a question');
+            return;
+        }
 
+        console.log('Processing question:', question);
         isProcessing = true;
         addUserMessage(question);
         messageInput.value = '';
@@ -812,205 +837,212 @@ document.addEventListener('DOMContentLoaded', function() {
         // شبیه‌سازی تایپ
         showTypingIndicator();
 
-        // تاخیر برای شبیه‌سازی پردازش
-        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+        try {
+            // تاخیر برای شبیه‌سازی پردازش
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
 
-        hideTypingIndicator();
+            hideTypingIndicator();
 
-        // تولید پاسخ بر اساس سوال
-        let response = '';
-        let actions = null;
-        let data = null;
+            // تولید پاسخ بر اساس سوال
+            let response = '';
+            let actions = null;
+            let data = null;
 
-        const questionLower = question.toLowerCase();
+            const questionLower = question.toLowerCase();
 
-        // پردازش دستورات مختلف
-        if (questionLower.includes('سلام') || questionLower.includes('hi') || questionLower.includes('hello')) {
-            response = `سلام! 👋 خوش آمدید. چه کاری می‌توانم برای شما انجام دهم؟`;
-            actions = `
-                <button type="button" class="btn btn-sm btn-outline-primary me-2 quick-question" data-question="چگونه گزارش ایجاد کنم">
-                    <i class="fas fa-file-alt me-1"></i>ایجاد گزارش
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-success me-2 quick-question" data-question="آمار امروز">
-                    <i class="fas fa-chart-bar me-1"></i>آمار امروز
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-warning quick-question" data-question="بازرسی جدید">
-                    <i class="fas fa-clipboard-check me-1"></i>بازرسی جدید
-                </button>
-            `;
-        }
-        else if (questionLower.includes('بازرسی')) {
-            if (questionLower.includes('جدید') || questionLower.includes('ایجاد')) {
-                response = `برای ایجاد بازرسی جدید مراحل زیر را انجام دهید:`;
-                data = {
-                    type: 'list',
-                    items: [
-                        { icon: 'clipboard-check', color: 'primary', text: 'به بخش بازرسی‌ها مراجعه کنید' },
-                        { icon: 'plus-circle', color: 'success', text: 'دکمه "بازرسی جدید" را کلیک کنید' },
-                        { icon: 'edit', color: 'info', text: 'فرم بازرسی را تکمیل نمایید' },
-                        { icon: 'paper-plane', color: 'warning', text: 'فرم را ارسال و کد رهگیری دریافت کنید' }
-                    ]
-                };
+            // پردازش دستورات مختلف
+            if (questionLower.includes('سلام') || questionLower.includes('hi') || questionLower.includes('hello')) {
+                response = `سلام! 👋 خوش آمدید. چه کاری می‌توانم برای شما انجام دهم؟`;
                 actions = `
-                    <button type="button" class="btn btn-sm btn-primary me-2 action-btn" onclick="window.location.href='/inspections/new'">
-                        <i class="fas fa-plus me-1"></i>ایجاد بازرسی جدید
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2 quick-question" data-question="چگونه گزارش ایجاد کنم">
+                        <i class="fas fa-file-alt me-1"></i>ایجاد گزارش
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-primary action-btn" onclick="window.location.href='/inspections'">
-                        <i class="fas fa-list me-1"></i>مشاهده همه بازرسی‌ها
+                    <button type="button" class="btn btn-sm btn-outline-success me-2 quick-question" data-question="آمار امروز">
+                        <i class="fas fa-chart-bar me-1"></i>آمار امروز
                     </button>
-                `;
-            } else {
-                response = `📋 <strong>وضعیت بازرسی‌های امروز:</strong>`;
-                data = {
-                    type: 'table',
-                    headers: ['نوع', 'تعداد'],
-                    rows: [
-                        { key: 'برنامه‌ریزی شده', value: '۳ مورد' },
-                        { key: 'در حال انجام', value: '۲ مورد' },
-                        { key: 'تکمیل شده', value: '۵ مورد' },
-                        { key: 'معوقه', value: '۱ مورد' }
-                    ]
-                };
-                actions = `
-                    <button type="button" class="btn btn-sm btn-primary me-2 quick-question" data-question="بازرسی معوقه">
-                        <i class="fas fa-exclamation-triangle me-1"></i>بازرسی‌های معوقه
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-primary action-btn" onclick="window.location.href='/inspections'">
-                        <i class="fas fa-eye me-1"></i>مشاهده جزئیات
+                    <button type="button" class="btn btn-sm btn-outline-warning quick-question" data-question="بازرسی جدید">
+                        <i class="fas fa-clipboard-check me-1"></i>بازرسی جدید
                     </button>
                 `;
             }
-        }
-        else if (questionLower.includes('حادثه')) {
-            response = `⚠️ <strong>آمار حوادث ۳۰ روز اخیر:</strong>`;
-            data = {
-                type: 'table',
-                headers: ['نوع حادثه', 'تعداد'],
-                rows: [
-                    { key: 'حادثه شدید', value: '۲ مورد' },
-                    { key: 'حادثه جزئی', value: '۵ مورد' },
-                    { key: 'شبه حادثه', value: '۸ مورد' },
-                    { key: 'خطای انسانی', value: '۳ مورد' }
-                ]
-            };
-            actions = `
-                <button type="button" class="btn btn-sm btn-danger me-2 action-btn" onclick="window.location.href='/incidents/new'">
-                    <i class="fas fa-plus me-1"></i>ثبت حادثه جدید
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger action-btn" onclick="window.location.href='/incidents'">
-                    <i class="fas fa-chart-line me-1"></i>گزارش آماری
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-warning quick-question" data-question="آخرین حوادث ثبت شده">
-                    <i class="fas fa-history me-1"></i>آخرین حوادث
-                </button>
-            `;
-        }
-        else if (questionLower.includes('آموزش')) {
-            response = `🎓 <strong>وضعیت آموزش‌های HSE:</strong>`;
-            data = {
-                type: 'list',
-                items: [
-                    { icon: 'calendar-check', color: 'success', text: '۵ آموزش برنامه‌ریزی شده' },
-                    { icon: 'chalkboard-teacher', color: 'warning', text: '۳ آموزش در حال برگزاری' },
-                    { icon: 'graduation-cap', color: 'primary', text: '۸ آموزش تکمیل شده این ماه' },
-                    { icon: 'users', color: 'info', text: '۱۲۷ نفر-ساعت آموزش' }
-                ]
-            };
-            actions = `
-                <button type="button" class="btn btn-sm btn-success me-2 action-btn" onclick="window.location.href='/trainings/new'">
-                    <i class="fas fa-graduation-cap me-1"></i>ثبت آموزش جدید
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-success action-btn" onclick="window.location.href='/trainings'">
-                    <i class="fas fa-list me-1"></i>لیست آموزش‌ها
-                </button>
-            `;
-        }
-        else if (questionLower.includes('وظیفه') || questionLower.includes('تسک')) {
-            response = `✅ <strong>وظایف امروز:</strong>`;
-            data = {
-                type: 'table',
-                headers: ['وضعیت', 'تعداد'],
-                rows: [
-                    { key: 'در انتظار', value: '۵ وظیفه' },
-                    { key: 'در حال انجام', value: '۳ وظیفه' },
-                    { key: 'معوقه', value: '۲ وظیفه' },
-                    { key: 'تکمیل شده', value: '۷ وظیفه' }
-                ]
-            };
-            actions = `
-                <button type="button" class="btn btn-sm btn-warning me-2 action-btn" onclick="window.location.href='/tasks/new'">
-                    <i class="fas fa-tasks me-1"></i>ایجاد وظیفه جدید
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-warning action-btn" onclick="window.location.href='/tasks'">
-                    <i class="fas fa-calendar me-1"></i>برنامه‌ریزی
-                </button>
-            `;
-        }
-        else if (questionLower.includes('گزارش')) {
-            response = `📊 <strong>گزارش‌های HSE موجود:</strong>`;
-            data = {
-                type: 'list',
-                items: [
-                    { icon: 'file-medical', color: 'primary', text: 'گزارش ماهانه ایمنی' },
-                    { icon: 'leaf', color: 'success', text: 'گزارش فصلی محیط زیست' },
-                    { icon: 'heartbeat', color: 'danger', text: 'گزارش سالانه بهداشت' },
-                    { icon: 'chart-line', color: 'warning', text: 'گزارش حوادث هفتگی' }
-                ]
-            };
-            actions = `
-                <button type="button" class="btn btn-sm btn-info me-2 action-btn" onclick="window.location.href='/reports/new'">
-                    <i class="fas fa-file-medical me-1"></i>ایجاد گزارش جدید
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-info action-btn" onclick="window.location.href='/reports'">
-                    <i class="fas fa-archive me-1"></i>آرشیو گزارش‌ها
-                </button>
-            `;
-        }
-        else if (questionLower.includes('آمار') || questionLower.includes('stat')) {
-            response = `📈 <strong>آمار کلی HSE این ماه:</strong>`;
-            data = {
-                type: 'table',
-                headers: ['شاخص', 'مقدار'],
-                rows: [
-                    { key: 'نرخ حادثه', value: '۰.۴۵' },
-                    { key: 'تعداد روزهای بدون حادثه', value: '۸۷ روز' },
-                    { key: 'درصد آموزش‌های انجام شده', value: '۹۲٪' },
-                    { key: 'میانگین نمره بازرسی', value: '۸.۷/۱۰' },
-                    { key: 'وظایف تکمیل شده', value: '۹۴٪' }
-                ]
-            };
-            actions = `
-                <button type="button" class="btn btn-sm btn-primary me-2 quick-question" data-question="گزارش ماهانه">
-                    <i class="fas fa-chart-pie me-1"></i>گزارش ماهانه
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-primary quick-question" data-question="مقایسه با ماه قبل">
-                    <i class="fas fa-exchange-alt me-1"></i>مقایسه ماهانه
-                </button>
-            `;
-        }
-        else {
-            response = `سوال شما را متوجه شدم. در حال حاضر می‌توانم در زمینه‌های زیر کمک کنم:<br><br>
-            • <strong>مدیریت بازرسی‌ها و ممیزی‌ها</strong><br>
-            • <strong>ثبت و پیگیری حوادث</strong><br>
-            • <strong>برنامه‌ریزی و مدیریت آموزش‌ها</strong><br>
-            • <strong>ایجاد و پیگیری وظایف</strong><br>
-            • <strong>تهیه گزارش‌های HSE</strong><br><br>
-            لطفاً سوال خود را دقیق‌تر مطرح کنید یا از گزینه‌های زیر استفاده نمایید:`;
-            actions = `
-                <button type="button" class="btn btn-sm btn-outline-primary me-2 mb-2 quick-question" data-question="چگونه حادثه ثبت کنم">
-                    <i class="fas fa-exclamation-triangle me-1"></i>ثبت حادثه
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-success me-2 mb-2 quick-question" data-question="آموزش جدید ایجاد کن">
-                    <i class="fas fa-graduation-cap me-1"></i>آموزش جدید
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-warning mb-2 quick-question" data-question="بازرسی جدید ایجاد کن">
-                    <i class="fas fa-clipboard-check me-1"></i>بازرسی جدید
-                </button>
-            `;
-        }
+            else if (questionLower.includes('بازرسی')) {
+                if (questionLower.includes('جدید') || questionLower.includes('ایجاد')) {
+                    response = `برای ایجاد بازرسی جدید مراحل زیر را انجام دهید:`;
+                    data = {
+                        type: 'list',
+                        items: [
+                            { icon: 'clipboard-check', color: 'primary', text: 'به بخش بازرسی‌ها مراجعه کنید' },
+                            { icon: 'plus-circle', color: 'success', text: 'دکمه "بازرسی جدید" را کلیک کنید' },
+                            { icon: 'edit', color: 'info', text: 'فرم بازرسی را تکمیل نمایید' },
+                            { icon: 'paper-plane', color: 'warning', text: 'فرم را ارسال و کد رهگیری دریافت کنید' }
+                        ]
+                    };
+                    actions = `
+                        <button type="button" class="btn btn-sm btn-primary me-2 action-btn" data-url="/inspections/new">
+                            <i class="fas fa-plus me-1"></i>ایجاد بازرسی جدید
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary action-btn" data-url="/inspections">
+                            <i class="fas fa-list me-1"></i>مشاهده همه بازرسی‌ها
+                        </button>
+                    `;
+                } else {
+                    response = `📋 <strong>وضعیت بازرسی‌های امروز:</strong>`;
+                    data = {
+                        type: 'table',
+                        headers: ['نوع', 'تعداد'],
+                        rows: [
+                            { key: 'برنامه‌ریزی شده', value: '۳ مورد' },
+                            { key: 'در حال انجام', value: '۲ مورد' },
+                            { key: 'تکمیل شده', value: '۵ مورد' },
+                            { key: 'معوقه', value: '۱ مورد' }
+                        ]
+                    };
+                    actions = `
+                        <button type="button" class="btn btn-sm btn-primary me-2 quick-question" data-question="بازرسی معوقه">
+                            <i class="fas fa-exclamation-triangle me-1"></i>بازرسی‌های معوقه
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary action-btn" data-url="/inspections">
+                            <i class="fas fa-eye me-1"></i>مشاهده جزئیات
+                        </button>
+                    `;
+                }
+            }
+            else if (questionLower.includes('حادثه')) {
+                response = `⚠️ <strong>آمار حوادث ۳۰ روز اخیر:</strong>`;
+                data = {
+                    type: 'table',
+                    headers: ['نوع حادثه', 'تعداد'],
+                    rows: [
+                        { key: 'حادثه شدید', value: '۲ مورد' },
+                        { key: 'حادثه جزئی', value: '۵ مورد' },
+                        { key: 'شبه حادثه', value: '۸ مورد' },
+                        { key: 'خطای انسانی', value: '۳ مورد' }
+                    ]
+                };
+                actions = `
+                    <button type="button" class="btn btn-sm btn-danger me-2 action-btn" data-url="/incidents/new">
+                        <i class="fas fa-plus me-1"></i>ثبت حادثه جدید
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger action-btn" data-url="/incidents">
+                        <i class="fas fa-chart-line me-1"></i>گزارش آماری
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning quick-question" data-question="آخرین حوادث ثبت شده">
+                        <i class="fas fa-history me-1"></i>آخرین حوادث
+                    </button>
+                `;
+            }
+            else if (questionLower.includes('آموزش')) {
+                response = `🎓 <strong>وضعیت آموزش‌های HSE:</strong>`;
+                data = {
+                    type: 'list',
+                    items: [
+                        { icon: 'calendar-check', color: 'success', text: '۵ آموزش برنامه‌ریزی شده' },
+                        { icon: 'chalkboard-teacher', color: 'warning', text: '۳ آموزش در حال برگزاری' },
+                        { icon: 'graduation-cap', color: 'primary', text: '۸ آموزش تکمیل شده این ماه' },
+                        { icon: 'users', color: 'info', text: '۱۲۷ نفر-ساعت آموزش' }
+                    ]
+                };
+                actions = `
+                    <button type="button" class="btn btn-sm btn-success me-2 action-btn" data-url="/trainings/new">
+                        <i class="fas fa-graduation-cap me-1"></i>ثبت آموزش جدید
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success action-btn" data-url="/trainings">
+                        <i class="fas fa-list me-1"></i>لیست آموزش‌ها
+                    </button>
+                `;
+            }
+            else if (questionLower.includes('وظیفه') || questionLower.includes('تسک')) {
+                response = `✅ <strong>وظایف امروز:</strong>`;
+                data = {
+                    type: 'table',
+                    headers: ['وضعیت', 'تعداد'],
+                    rows: [
+                        { key: 'در انتظار', value: '۵ وظیفه' },
+                        { key: 'در حال انجام', value: '۳ وظیفه' },
+                        { key: 'معوقه', value: '۲ وظیفه' },
+                        { key: 'تکمیل شده', value: '۷ وظیفه' }
+                    ]
+                };
+                actions = `
+                    <button type="button" class="btn btn-sm btn-warning me-2 action-btn" data-url="/tasks/new">
+                        <i class="fas fa-tasks me-1"></i>ایجاد وظیفه جدید
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning action-btn" data-url="/tasks">
+                        <i class="fas fa-calendar me-1"></i>برنامه‌ریزی
+                    </button>
+                `;
+            }
+            else if (questionLower.includes('گزارش')) {
+                response = `📊 <strong>گزارش‌های HSE موجود:</strong>`;
+                data = {
+                    type: 'list',
+                    items: [
+                        { icon: 'file-medical', color: 'primary', text: 'گزارش ماهانه ایمنی' },
+                        { icon: 'leaf', color: 'success', text: 'گزارش فصلی محیط زیست' },
+                        { icon: 'heartbeat', color: 'danger', text: 'گزارش سالانه بهداشت' },
+                        { icon: 'chart-line', color: 'warning', text: 'گزارش حوادث هفتگی' }
+                    ]
+                };
+                actions = `
+                    <button type="button" class="btn btn-sm btn-info me-2 action-btn" data-url="/reports/new">
+                        <i class="fas fa-file-medical me-1"></i>ایجاد گزارش جدید
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info action-btn" data-url="/reports">
+                        <i class="fas fa-archive me-1"></i>آرشیو گزارش‌ها
+                    </button>
+                `;
+            }
+            else if (questionLower.includes('آمار') || questionLower.includes('stat')) {
+                response = `📈 <strong>آمار کلی HSE این ماه:</strong>`;
+                data = {
+                    type: 'table',
+                    headers: ['شاخص', 'مقدار'],
+                    rows: [
+                        { key: 'نرخ حادثه', value: '۰.۴۵' },
+                        { key: 'تعداد روزهای بدون حادثه', value: '۸۷ روز' },
+                        { key: 'درصد آموزش‌های انجام شده', value: '۹۲٪' },
+                        { key: 'میانگین نمره بازرسی', value: '۸.۷/۱۰' },
+                        { key: 'وظایف تکمیل شده', value: '۹۴٪' }
+                    ]
+                };
+                actions = `
+                    <button type="button" class="btn btn-sm btn-primary me-2 quick-question" data-question="گزارش ماهانه">
+                        <i class="fas fa-chart-pie me-1"></i>گزارش ماهانه
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary quick-question" data-question="مقایسه با ماه قبل">
+                        <i class="fas fa-exchange-alt me-1"></i>مقایسه ماهانه
+                    </button>
+                `;
+            }
+            else {
+                response = `سوال شما را متوجه شدم. در حال حاضر می‌توانم در زمینه‌های زیر کمک کنم:<br><br>
+                • <strong>مدیریت بازرسی‌ها و ممیزی‌ها</strong><br>
+                • <strong>ثبت و پیگیری حوادث</strong><br>
+                • <strong>برنامه‌ریزی و مدیریت آموزش‌ها</strong><br>
+                • <strong>ایجاد و پیگیری وظایف</strong><br>
+                • <strong>تهیه گزارش‌های HSE</strong><br><br>
+                لطفاً سوال خود را دقیق‌تر مطرح کنید یا از گزینه‌های زیر استفاده نمایید:`;
+                actions = `
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2 mb-2 quick-question" data-question="چگونه حادثه ثبت کنم">
+                        <i class="fas fa-exclamation-triangle me-1"></i>ثبت حادثه
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success me-2 mb-2 quick-question" data-question="آموزش جدید ایجاد کن">
+                        <i class="fas fa-graduation-cap me-1"></i>آموزش جدید
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning mb-2 quick-question" data-question="بازرسی جدید ایجاد کن">
+                        <i class="fas fa-clipboard-check me-1"></i>بازرسی جدید
+                    </button>
+                `;
+            }
 
-        addAiMessage(response, actions, data);
-        isProcessing = false;
+            addAiMessage(response, actions, data);
+            console.log('Question processed successfully');
+        } catch (error) {
+            console.error('Error processing question:', error);
+            addAiMessage(`متأسفانه در پردازش سوال شما مشکلی پیش آمد. لطفاً دوباره تلاش کنید.`, null, null);
+        } finally {
+            isProcessing = false;
+        }
     }
 
     // جلوگیری از XSS
@@ -1020,80 +1052,121 @@ document.addEventListener('DOMContentLoaded', function() {
         return div.innerHTML;
     }
 
-    // مدیریت رویدادها
-    chatForm.addEventListener('submit', async function(e) {
+    // مدیریت ارسال فرم
+    function handleFormSubmit(e) {
+        console.log('Form submit event triggered');
         e.preventDefault();
+        e.stopPropagation();
 
-        if (!this.checkValidity()) {
-            this.classList.add('was-validated');
+        const message = messageInput.value.trim();
+        console.log('Message to send:', message);
+
+        if (!message) {
+            console.log('Message is empty');
+            chatForm.classList.add('was-validated');
             return;
         }
 
-        const message = messageInput.value.trim();
-        if (message && !isProcessing) {
-            await processQuestion(message);
-            this.classList.remove('was-validated');
+        if (isProcessing) {
+            console.log('Already processing, ignoring request');
+            return;
         }
-    });
+
+        processQuestion(message);
+        chatForm.classList.remove('was-validated');
+    }
+
+    // تنظیم دکمه‌های مثال
+    function setupExampleButtons() {
+        // دکمه‌های سوالات مثال
+        document.querySelectorAll('.example-question').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const question = this.dataset.question;
+                console.log('Example question clicked:', question);
+                messageInput.value = question;
+                handleFormSubmit(e);
+            });
+        });
+
+        // دکمه‌های اقدامات سریع
+        document.querySelectorAll('.quick-action').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const action = this.dataset.action;
+                let question = '';
+
+                switch(action) {
+                    case 'inspections':
+                        question = 'بازرسی‌های امروز را نشان بده';
+                        break;
+                    case 'incidents':
+                        question = 'آخرین حوادث ثبت شده';
+                        break;
+                    case 'trainings':
+                        question = 'آموزش‌های در حال برگزاری';
+                        break;
+                    case 'tasks':
+                        question = 'وظایف معوقه امروز';
+                        break;
+                    case 'reports':
+                        question = 'گزارش ماهانه HSE';
+                        break;
+                }
+
+                console.log('Quick action clicked:', action, '->', question);
+                messageInput.value = question;
+                handleFormSubmit(e);
+            });
+        });
+    }
+
+    // تنظیم دکمه‌های اقدام در پیام‌ها
+    function setupMessageActionButtons(messageDiv) {
+        // دکمه‌های سوال سریع
+        messageDiv.querySelectorAll('.quick-question').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const question = this.dataset.question;
+                console.log('Quick question clicked in message:', question);
+                messageInput.value = question;
+                handleFormSubmit(e);
+            });
+        });
+
+        // دکمه‌های اقدام
+        messageDiv.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.dataset.url;
+                if (url) {
+                    console.log('Action button clicked, navigating to:', url);
+                    window.location.href = url;
+                }
+            });
+        });
+    }
+
+    // مدیریت رویداد فرم
+    chatForm.addEventListener('submit', handleFormSubmit);
 
     // مدیریت Enter و Shift+Enter
     messageInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
+            console.log('Enter key pressed (without Shift)');
             e.preventDefault();
-            chatForm.dispatchEvent(new Event('submit'));
-        }
-    });
-
-    // دکمه‌های سوال سریع
-    document.addEventListener('click', function(e) {
-        // سوالات مثال
-        if (e.target.closest('.example-question')) {
-            const btn = e.target.closest('.example-question');
-            const question = btn.dataset.question;
-            messageInput.value = question;
-            chatForm.dispatchEvent(new Event('submit'));
-        }
-
-        // سوالات سریع در چت
-        if (e.target.closest('.quick-question')) {
-            const btn = e.target.closest('.quick-question');
-            const question = btn.dataset.question;
-            messageInput.value = question;
-            chatForm.dispatchEvent(new Event('submit'));
-        }
-
-        // اقدامات سریع
-        if (e.target.closest('.quick-action')) {
-            const btn = e.target.closest('.quick-action');
-            const action = btn.dataset.action;
-            let question = '';
-
-            switch(action) {
-                case 'inspections':
-                    question = 'بازرسی‌های امروز را نشان بده';
-                    break;
-                case 'incidents':
-                    question = 'آخرین حوادث ثبت شده';
-                    break;
-                case 'trainings':
-                    question = 'آموزش‌های در حال برگزاری';
-                    break;
-                case 'tasks':
-                    question = 'وظایف معوقه امروز';
-                    break;
-                case 'reports':
-                    question = 'گزارش ماهانه HSE';
-                    break;
-            }
-
-            messageInput.value = question;
-            chatForm.dispatchEvent(new Event('submit'));
+            handleFormSubmit(e);
+        } else if (e.key === 'Enter' && e.shiftKey) {
+            console.log('Shift+Enter pressed - new line');
+            // اجازه می‌دهیم خط جدید ایجاد شود
         }
     });
 
     // پاک کردن چت
-    clearChatBtn.addEventListener('click', function() {
+    clearChatBtn.addEventListener('click', function(e) {
+        e.preventDefault();
         if (confirm('آیا از پاک کردن تمام گفتگو اطمینان دارید؟')) {
+            console.log('Clearing chat');
             chatMessages.innerHTML = '';
             localStorage.removeItem('hseChatHistory');
             chatHistory = [];
@@ -1120,7 +1193,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // گفتگوی جدید
-    newChatBtn.addEventListener('click', function() {
+    newChatBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Starting new chat');
         chatMessages.innerHTML = '';
         chatHistory = [];
 
@@ -1147,7 +1222,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ذخیره گفتگو
-    document.getElementById('exportChatBtn').addEventListener('click', function() {
+    document.getElementById('exportChatBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Exporting chat');
+
         const chatContent = Array.from(chatMessages.querySelectorAll('.message-content'))
             .map(content => {
                 const sender = content.closest('.user-message') ? 'شما' : 'دستیار';
@@ -1191,6 +1269,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // راهنما
     document.getElementById('helpBtn').addEventListener('click', function(e) {
         e.preventDefault();
+        console.log('Help button clicked');
         const helpText = `📚 <strong>راهنمای استفاده از دستیار HSE</strong><br><br>
 
         <strong>💡 قابلیت‌های اصلی:</strong><br>
@@ -1220,6 +1299,19 @@ document.addEventListener('DOMContentLoaded', function() {
             </button>
         `);
     });
+
+    // تنظیم event listener برای دکمه‌های موجود در صفحه اول
+    setTimeout(() => {
+        document.querySelectorAll('.quick-question').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const question = this.dataset.question;
+                console.log('Initial quick question clicked:', question);
+                messageInput.value = question;
+                handleFormSubmit(e);
+            });
+        });
+    }, 500);
 
     // مقداردهی اولیه
     init();

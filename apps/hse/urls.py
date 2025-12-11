@@ -72,6 +72,7 @@ urlpatterns = [
     path('notifications/<uuid:notification_id>/', views.notification_detail, name='notification_detail'),
 
 
+
        path('companies/<uuid:company_id>/trainings/',
          views.training_list,
          name='training_list'),
@@ -106,6 +107,6 @@ urlpatterns = [
 
 
   path('ai-assistant/', views.ai_assistant, name='ai_assistant'),
-
+     path('servicelist/',views.serviceLst,name='servicelist')
 
 ]

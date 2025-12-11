@@ -6,6 +6,7 @@ from ..model.user import CustomUser
 from ..model.security import UserSecurity
 from ..validators.common import generate_activation_code
 from ..validators.code_validator import validate_activation_code
+import utils
 
 class AuthService:
     @staticmethod
@@ -28,13 +29,15 @@ class AuthService:
         return security
 
     @staticmethod
-    def send_activation_code(security, code_length=5, expire_minutes=2):
+    def send_activation_code(security, mobile,code_length=5, expire_minutes=2):
         """
         تولید و ذخیره کد فعال‌سازی
         """
         code = generate_activation_code(code_length)
         expire_time = timezone.now() + timedelta(minutes=expire_minutes)
         security.activeCode = code
+        utils.send_sms(mobile, code)
+
         security.expireCode = expire_time
         security.isBan = False
         security.save()

@@ -288,6 +288,12 @@
                 شرکت‌های من
             </a>
 
+            <a class="nav-link {% if request.resolver_match.url_name == 'company_list' %}active{% endif %}"
+               href="{% url 'hse:servicelist' %}">
+                <i class="fas fa-list"></i>
+               خدمات ما
+            </a>
+
             <div class="mt-auto pt-3 border-top border-secondary mx-3">
                 <a class="nav-link text-danger" href="#">
                     <i class="fas fa-sign-out-alt"></i>

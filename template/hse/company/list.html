@@ -10,7 +10,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- آمار -->
 <div class="row mb-4">
     <div class="col-md-3 col-6">
         <div class="stat-card bg-primary">
@@ -21,9 +20,9 @@
     </div>
     <div class="col-md-3 col-6">
         <div class="stat-card bg-success">
-            <i class="fas fa-check-circle"></i>
-            <span class="number">{{ stats.active }}</span>
-            <small>فعال</small>
+            <i class="fas fa-crown"></i>
+            <span class="number">{{ stats.owner_count }}</span>
+            <small>مالک</small>
         </div>
     </div>
     <div class="col-md-3 col-6">
@@ -43,105 +42,285 @@
 </div>
 
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-building text-primary me-2"></i>لیست شرکت‌های من</h5>
-
-        <div class="input-group" style="width: 300px;">
-            <input type="text" class="form-control" placeholder="جستجوی شرکت..." id="searchCompany">
-            <button class="btn btn-outline-secondary" type="button">
-                <i class="fas fa-search"></i>
-            </button>
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-building text-primary me-2"></i>لیست شرکت‌های من</h5>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="all">
+                    همه ({{ company_info|length }})
+                </button>
+                <button class="btn btn-sm btn-outline-primary filter-btn" data-filter="مالک">
+                    مالک ({{ stats.owner_count }})
+                </button>
+                <button class="btn btn-sm btn-outline-danger filter-btn" data-filter="مدیر">
+                    مدیر ({{ stats.manager_count }})
+                </button>
+                <button class="btn btn-sm btn-outline-info filter-btn" data-filter="کارشناس">
+                    کارشناس ({{ stats.specialist_count }})
+                </button>
+            </div>
         </div>
     </div>
 
     <div class="card-body">
-        {% if companies %}
+        {% if company_info %}
         <div class="table-responsive">
-            <table class="table table-hover" id="companyTable">
+            <table class="table table-hover" id="companiesTable">
                 <thead>
                     <tr>
                         <th>نام شرکت</th>
                         <th>حوزه فعالیت</th>
+                        <th>نقش شما</th>
                         <th>وضعیت</th>
                         <th>آمار</th>
-                        <th>تاریخ ایجاد</th>
                         <th>عملیات</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for company in companies %}
-                    <tr data-company-id="{{ company.id }}">
+                    {% for info in company_info %}
+                    {% with company=info.company %}
+                    <tr data-role="{{ info.role }}">
                         <td>
-                            <strong>{{ company.name }}</strong>
-                            <div class="text-muted small">
-                                ID: {{ company.id|slice:":8" }}...
+                            <div class="d-flex align-items-center">
+                                <div class="company-icon me-2">
+                                    {% if info.role == 'مالک' %}
+                                    <i class="fas fa-crown text-warning"></i>
+                                    {% elif info.role == 'مدیر' %}
+                                    <i class="fas fa-user-tie text-danger"></i>
+                                    {% elif info.role == 'کارشناس' %}
+                                    <i class="fas fa-user-graduate text-info"></i>
+                                    {% elif info.role == 'ناظر' %}
+                                    <i class="fas fa-user-check text-warning"></i>
+                                    {% else %}
+                                    <i class="fas fa-user text-secondary"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <strong>{{ company.name }}</strong>
+                                    <div class="text-muted small">
+                                        {% if company.code %}
+                                        کد: {{ company.code }}
+                                        {% else %}
+                                        ID: {{ company.id|slice:":8" }}...
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                         </td>
-                        <td>{{ company.activity_field }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                {{ company.activity_field }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if info.role == 'مالک' %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-crown me-1"></i>{{ info.role }}
+                            </span>
+                            {% elif info.role == 'مدیر' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-user-tie me-1"></i>{{ info.role }}
+                            </span>
+                            {% elif info.role == 'کارشناس' %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-user-graduate me-1"></i>{{ info.role }}
+                            </span>
+                            {% elif info.role == 'ناظر' %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-user-check me-1"></i>{{ info.role }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-user me-1"></i>{{ info.role }}
+                            </span>
+                            {% endif %}
+
+                            <!-- سطح دسترسی -->
+                            <div class="small mt-1">
+                                {% if info.role == 'مالک' %}
+                                <span class="text-success">دسترسی کامل</span>
+                                {% elif info.role == 'مدیر' %}
+                                <span class="text-primary">مدیریتی</span>
+                                {% elif info.role == 'کارشناس' %}
+                                <span class="text-info">کارشناس</span>
+                                {% else %}
+                                <span class="text-muted">مشاهده‌ای</span>
+                                {% endif %}
+                            </div>
+                        </td>
                         <td>
                             {% if company.is_active %}
-                            <span class="badge bg-success" id="status-{{ company.id }}">
+                            <span class="badge bg-success">
                                 <i class="fas fa-check-circle me-1"></i>فعال
                             </span>
                             {% else %}
-                            <span class="badge bg-secondary" id="status-{{ company.id }}">
+                            <span class="badge bg-secondary">
                                 <i class="fas fa-times-circle me-1"></i>غیرفعال
                             </span>
                             {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex gap-2">
-                                <span class="badge bg-info" title="بخش‌ها">
-                                    <i class="fas fa-sitemap"></i> {{ company.departments.count }}
-                                </span>
-                                <span class="badge bg-warning" title="اعضا">
-                                    <i class="fas fa-users"></i> {{ company.members.count }}
-                                </span>
+                            <div class="small mt-1">
+                                {{ company.created_at|date:"Y/m/d" }}
                             </div>
                         </td>
                         <td>
-                            {{ company.created_at|date:"Y/m/d" }}
-                            <div class="text-muted small">
-                                {{ company.created_at|timesince }} پیش
+                            <div class="stats-badges">
+                                <span class="badge bg-info" title="بخش‌ها" data-bs-toggle="tooltip">
+                                    <i class="fas fa-sitemap"></i> {{ company.departments.count }}
+                                </span>
+                                <span class="badge bg-warning" title="اعضا" data-bs-toggle="tooltip">
+                                    <i class="fas fa-users"></i> {{ company.members.count }}
+                                </span>
+                                {% if info.role == 'کارشناس' %}
+                                <span class="badge bg-primary" title="تخصص‌ها" data-bs-toggle="tooltip">
+                                    <i class="fas fa-tools"></i> {{ info.specialties|default:"-" }}
+                                </span>
+                                {% endif %}
                             </div>
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
+                                <!-- دکمه ورود به پنل (برای مالک، مدیر و کارشناس) -->
+                                {% if info.role == 'مالک' or info.role == 'مدیر' or info.role == 'کارشناس' %}
                                 <a href="{% url 'hse:dashboard' company.id %}"
-                                   class="btn btn-outline-primary" title="داشبورد">
+                                   class="btn btn-outline-primary" title="ورود به پنل">
                                     <i class="fas fa-tachometer-alt"></i>
+                                    <span class="d-none d-md-inline">ورود</span>
                                 </a>
+                                {% endif %}
+
+                                <!-- دکمه مشاهده (برای همه) -->
                                 <a href="{% url 'hse:company_detail' company.id %}"
                                    class="btn btn-outline-info" title="مشاهده">
                                     <i class="fas fa-eye"></i>
+                                    <span class="d-none d-md-inline">مشاهده</span>
                                 </a>
+
+                                <!-- دکمه ویرایش (فقط برای مالک و مدیر) -->
+                                {% if info.role == 'مالک' or info.role == 'مدیر' %}
                                 <a href="{% url 'hse:company_edit' company.id %}"
                                    class="btn btn-outline-warning" title="ویرایش">
                                     <i class="fas fa-edit"></i>
+                                    <span class="d-none d-md-inline">ویرایش</span>
                                 </a>
+                                {% endif %}
+
+                                <!-- دکمه تغییر وضعیت (فقط برای مالک) -->
+                                {% if info.role == 'مالک' %}
                                 <button class="btn btn-outline-danger toggle-status"
                                         data-company-id="{{ company.id }}"
                                         data-company-name="{{ company.name }}"
                                         title="تغییر وضعیت">
                                     <i class="fas fa-power-off"></i>
+                                    <span class="d-none d-md-inline">وضعیت</span>
                                 </button>
+                                {% endif %}
+
+                                <!-- دکمه ترک شرکت (برای غیر مالک) -->
+                                {% if info.role != 'مالک' %}
+                                <button class="btn btn-outline-secondary leave-company"
+                                        data-company-id="{{ company.id }}"
+                                        data-company-name="{{ company.name }}"
+                                        title="ترک شرکت">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span class="d-none d-md-inline">ترک</span>
+                                </button>
+                                {% endif %}
                             </div>
+
+                            <!-- دسترسی‌های کارشناس -->
+                            {% if info.role == 'کارشناس' %}
+                            <div class="mt-2">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    دسترسی‌ها:
+                                </small>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <span class="badge bg-success small">بازرسی</span>
+                                    <span class="badge bg-info small">گزارش</span>
+                                    <span class="badge bg-warning small">مشاهده</span>
+                                </div>
+                            </div>
+                            {% endif %}
                         </td>
                     </tr>
+                    {% endwith %}
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         {% else %}
-        <div class="text-center py-5" id="noCompanies">
+        <div class="text-center py-5">
             <i class="fas fa-building fa-4x text-muted mb-3"></i>
-            <h5 class="text-muted">هنوز شرکتی ایجاد نکرده‌اید</h5>
-            <p class="text-muted mb-4">برای شروع مدیریت HSE شرکت خود، اولین شرکت را ایجاد کنید.</p>
-            <a href="{% url 'hse:company_create' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus me-2"></i>ایجاد اولین شرکت
-            </a>
+            <h5 class="text-muted">شرکتی یافت نشد</h5>
+            <p class="text-muted mb-4">هنوز شرکت‌ای ایجاد نکرده‌اید یا عضو شرکتی نشده‌اید.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'hse:company_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>ایجاد شرکت جدید
+                </a>
+                <button class="btn btn-success" id="joinCompanyBtn">
+                    <i class="fas fa-user-plus me-2"></i>عضویت در شرکت
+                </button>
+            </div>
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Modal عضویت در شرکت -->
+<div class="modal fade" id="joinCompanyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus text-success me-2"></i>
+                    عضویت در شرکت
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    برای عضویت در شرکت، باید کد دعوت شرکت را داشته باشید یا توسط مدیر شرکت دعوت شوید.
+                </div>
+                <div class="mb-3">
+                    <label for="companyCode" class="form-label">کد دعوت شرکت</label>
+                    <input type="text" id="companyCode" class="form-control"
+                           placeholder="کد ۸ رقمی شرکت را وارد کنید">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-success" id="sendJoinRequest">
+                    <i class="fas fa-paper-plane me-2"></i>ارسال درخواست
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تغییر وضعیت -->
+<div class="modal fade" id="toggleStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-power-off text-danger me-2"></i>
+                    تغییر وضعیت شرکت
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از تغییر وضعیت شرکت <strong id="companyName"></strong> اطمینان دارید؟</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    در صورت غیرفعال کردن شرکت، دسترسی همه اعضا به پنل قطع خواهد شد.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" id="confirmToggleStatus">تأیید</button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -149,62 +328,132 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // جستجوی شرکت‌ها
-    $('#searchCompany').on('input', function() {
-        const searchTerm = $(this).val().toLowerCase();
-        $('#companyTable tbody tr').each(function() {
-            const text = $(this).text().toLowerCase();
-            if (text.includes(searchTerm)) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
+    // فعال کردن tooltip
+    $('[data-bs-toggle="tooltip"]').tooltip();
+
+    // فیلتر بر اساس نقش
+    $('.filter-btn').click(function() {
+        const filter = $(this).data('filter');
+
+        // آپدیت active state
+        $('.filter-btn').removeClass('active');
+        $(this).addClass('active');
+
+        // فیلتر کردن جدول
+        if (filter === 'all') {
+            $('#companiesTable tbody tr').show();
+        } else {
+            $('#companiesTable tbody tr').hide();
+            $(`#companiesTable tbody tr[data-role="${filter}"]`).show();
+        }
+    });
+
+    // Modal عضویت در شرکت
+    $('#joinCompanyBtn').click(function() {
+        $('#joinCompanyModal').modal('show');
+    });
+
+    // ارسال درخواست عضویت
+    $('#sendJoinRequest').click(function() {
+        const code = $('#companyCode').val().trim();
+
+        if (!code) {
+            showToast('warning', 'لطفاً کد دعوت شرکت را وارد کنید');
+            return;
+        }
+
+        // شبیه‌سازی ارسال درخواست
+        $(this).html('<span class="spinner-border spinner-border-sm me-2"></span>در حال ارسال...').prop('disabled', true);
+
+        setTimeout(() => {
+            showToast('success', 'درخواست عضویت شما ارسال شد و در انتظار تأیید مدیر شرکت است');
+            $('#joinCompanyModal').modal('hide');
+            $(this).html('<i class="fas fa-paper-plane me-2"></i>ارسال درخواست').prop('disabled', false);
+            $('#companyCode').val('');
+        }, 1500);
     });
 
     // تغییر وضعیت شرکت
-    $('.toggle-status').click(function(e) {
-        e.preventDefault();
+    $('.toggle-status').click(function() {
         const companyId = $(this).data('company-id');
         const companyName = $(this).data('company-name');
-        const currentStatus = $('#status-' + companyId).hasClass('bg-success');
-        const newStatus = !currentStatus;
 
-        if (confirm(`آیا می‌خواهید شرکت "${companyName}" را ${newStatus ? 'فعال' : 'غیرفعال'} کنید؟`)) {
-            // ساخت URL به صورت دستی
-            const toggleUrl = `/hse/companies/${companyId}/toggle-active/`;
+        $('#companyName').text(companyName);
+        $('#toggleStatusModal').data('company-id', companyId);
+        $('#toggleStatusModal').modal('show');
+    });
 
+    // تأیید تغییر وضعیت
+    $('#confirmToggleStatus').click(function() {
+        const companyId = $('#toggleStatusModal').data('company-id');
+        const button = $(this);
+
+        button.html('<span class="spinner-border spinner-border-sm me-2"></span>در حال انجام...').prop('disabled', true);
+
+        // شبیه‌سازی درخواست AJAX
+        setTimeout(() => {
             $.ajax({
-                url: toggleUrl,
+                url: `/hse/company/${companyId}/toggle-status/`,
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                data: {
-                    'company_id': companyId
-                },
                 success: function(response) {
-                    // بروزرسانی وضعیت در UI
-                    const statusBadge = $('#status-' + companyId);
-                    const button = $(`.toggle-status[data-company-id="${companyId}"]`);
-
-                    if (newStatus) {
-                        statusBadge.removeClass('bg-secondary').addClass('bg-success');
-                        statusBadge.html('<i class="fas fa-check-circle me-1"></i>فعال');
-                        button.removeClass('btn-outline-danger').addClass('btn-outline-success');
-                    } else {
-                        statusBadge.removeClass('bg-success').addClass('bg-secondary');
-                        statusBadge.html('<i class="fas fa-times-circle me-1"></i>غیرفعال');
-                        button.removeClass('btn-outline-success').addClass('btn-outline-danger');
+                    if (response.success) {
+                        showToast('success', 'وضعیت شرکت با موفقیت تغییر کرد');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
                     }
-
-                    showToast('success', `وضعیت شرکت "${companyName}" تغییر کرد`);
                 },
-                error: function(xhr) {
+                error: function() {
                     showToast('error', 'خطا در تغییر وضعیت شرکت');
+                },
+                complete: function() {
+                    button.html('تأیید').prop('disabled', false);
+                    $('#toggleStatusModal').modal('hide');
                 }
             });
-        }
+        }, 500);
+    });
+
+    // ترک شرکت
+    $('.leave-company').click(function() {
+        const companyId = $(this).data('company-id');
+        const companyName = $(this).data('company-name');
+
+        Swal.fire({
+            title: 'ترک شرکت',
+            html: `آیا از ترک شرکت <strong>${companyName}</strong> اطمینان دارید؟`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'بله، ترک کن',
+            cancelButtonText: 'انصراف'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // شبیه‌سازی درخواست ترک شرکت
+                $.ajax({
+                    url: `/hse/company/${companyId}/leave/`,
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('success', 'شما با موفقیت از شرکت خارج شدید');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        }
+                    },
+                    error: function() {
+                        showToast('error', 'خطا در ترک شرکت');
+                    }
+                });
+            }
+        });
     });
 
     // توابع کمکی
@@ -224,12 +473,15 @@ $(document).ready(function() {
     }
 
     function showToast(type, message) {
-        // ایجاد toast
         const toastId = 'toast-' + Date.now();
         const toastHtml = `
             <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
                 <div class="d-flex">
                     <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' :
+                                          type === 'error' ? 'exclamation-circle' :
+                                          type === 'warning' ? 'exclamation-triangle' :
+                                          'info-circle'} me-2"></i>
                         ${message}
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
@@ -237,64 +489,57 @@ $(document).ready(function() {
             </div>
         `;
 
-        // اضافه کردن toast به container
         if (!$('.toast-container').length) {
             $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
         }
 
         $('.toast-container').append(toastHtml);
 
-        // نمایش toast
         const toast = new bootstrap.Toast(document.getElementById(toastId));
         toast.show();
 
-        // حذف toast بعد از 5 ثانیه
         setTimeout(() => {
             $(`#${toastId}`).remove();
         }, 5000);
     }
+
+    // استایل‌های اضافی
+    const style = document.createElement('style');
+    style.textContent = `
+        .stat-card {
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+        .stat-card i {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .stat-card .number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: block;
+        }
+        .stat-card small {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .stats-badges .badge {
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        .company-icon {
+            width: 30px;
+            text-align: center;
+        }
+        .filter-btn.active {
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    `;
+    document.head.appendChild(style);
 });
 </script>
-
-<style>
-.stat-card {
-    padding: 20px;
-    border-radius: 10px;
-    color: white;
-    text-align: center;
-    transition: transform 0.3s;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-}
-
-.stat-card .number {
-    font-size: 2rem;
-    font-weight: bold;
-    display: block;
-    margin: 10px 0;
-}
-
-.stat-card small {
-    font-size: 0.9rem;
-    opacity: 0.9;
-}
-
-.table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
-}
-
-.btn-group-sm .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-}
-
-#noCompanies {
-    background-color: #f8f9fa;
-    border-radius: 10px;
-}
-</style>
 {% endblock %}
