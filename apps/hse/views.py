@@ -924,15 +924,10 @@ def invitation_list(request, company_id):
 
 
 from django.http import JsonResponse
+@login_required_company_member
 
 def invitation_accept(request, token):
     """پذیرش دعوت توسط کاربر"""
-    if request.method != 'POST':
-        return JsonResponse({
-            'success': False,
-            'error': 'متد درخواست صحیح نیست'
-        }, status=405)
-
     invitation = get_object_or_404(Invitation, token=token)
 
     # بررسی انقضا
@@ -948,13 +943,6 @@ def invitation_accept(request, token):
             'success': False,
             'error': 'این دعوت‌نامه قبلاً پاسخ داده شده است.'
         }, status=400)
-
-    # اگر کاربر لاگین نکرده
-    if not request.user.is_authenticated:
-        return JsonResponse({
-            'success': False,
-            'error': 'لطفاً ابتدا وارد حساب کاربری خود شوید.'
-        }, status=401)
 
     # بررسی آیا کاربر همان کاربر دعوت شده است
     if invitation.invited_user and invitation.invited_user != request.user:
@@ -980,7 +968,8 @@ def invitation_accept(request, token):
 
             return JsonResponse({
                 'success': True,
-                'message': 'شما قبلاً عضو این شرکت هستید.'
+                'message': 'شما قبلاً عضو این شرکت هستید.',
+                'status': 'ACCEPTED'
             })
 
         # ایجاد عضو جدید
@@ -999,10 +988,13 @@ def invitation_accept(request, token):
 
         # اعلان به مدیر شرکت
         if invitation.inviter:
+            # دریافت نام کاربر به صورت ایمن
+            user_display_name = get_user_display_name(request.user)
+
             Notification.objects.create(
                 user=invitation.inviter,
-                title=f"{request.user.full_name()} دعوت شما را پذیرفت",
-                message=f"{request.user.full_name()} دعوت شما به شرکت {invitation.company.name} را پذیرفت.",
+                title=f"{user_display_name} دعوت شما را پذیرفت",
+                message=f"{user_display_name} دعوت شما به شرکت {invitation.company.name} را پذیرفت.",
                 notification_type='SYSTEM',
                 related_object_id=member.id,
                 related_object_type='member'
@@ -1010,7 +1002,8 @@ def invitation_accept(request, token):
 
         return JsonResponse({
             'success': True,
-            'message': f'شما با موفقیت به شرکت {invitation.company.name} پیوستید.'
+            'message': f'شما با موفقیت به شرکت {invitation.company.name} پیوستید.',
+            'status': 'ACCEPTED'
         })
 
     except Exception as e:
@@ -1019,14 +1012,10 @@ def invitation_accept(request, token):
             'error': f'خطا در پذیرش دعوت: {str(e)}'
         }, status=500)
 
+@require_POST
+@login_required_company_member
 def invitation_reject(request, token):
     """رد دعوت توسط کاربر"""
-    if request.method != 'POST':
-        return JsonResponse({
-            'success': False,
-            'error': 'متد درخواست صحیح نیست'
-        }, status=405)
-
     invitation = get_object_or_404(Invitation, token=token)
 
     if invitation.is_expired():
@@ -1040,12 +1029,6 @@ def invitation_reject(request, token):
             'success': False,
             'error': 'این دعوت‌نامه قبلاً پاسخ داده شده است.'
         }, status=400)
-
-    if not request.user.is_authenticated:
-        return JsonResponse({
-            'success': False,
-            'error': 'لطفاً ابتدا وارد حساب کاربری خود شوید.'
-        }, status=401)
 
     # بررسی آیا کاربر همان کاربر دعوت شده است
     if invitation.invited_user and invitation.invited_user != request.user:
@@ -1069,16 +1052,20 @@ def invitation_reject(request, token):
 
         # اعلان به مدیر شرکت
         if invitation.inviter:
+            # دریافت نام کاربر به صورت ایمن
+            user_display_name = get_user_display_name(request.user)
+
             Notification.objects.create(
                 user=invitation.inviter,
-                title=f"{request.user.get_full_name()} دعوت شما را رد کرد",
-                message=f"{request.user.get_full_name()} دعوت شما به شرکت {invitation.company.name} را رد کرد.",
+                title=f"{user_display_name} دعوت شما را رد کرد",
+                message=f"{user_display_name} دعوت شما به شرکت {invitation.company.name} را رد کرد.",
                 notification_type='SYSTEM'
             )
 
         return JsonResponse({
             'success': True,
-            'message': 'دعوت‌نامه رد شد.'
+            'message': 'دعوت‌نامه رد شد.',
+            'status': 'REJECTED'
         })
 
     except Exception as e:
@@ -1086,6 +1073,50 @@ def invitation_reject(request, token):
             'success': False,
             'error': f'خطا در رد دعوت: {str(e)}'
         }, status=500)
+
+# تابع کمکی برای دریافت نام کاربر
+def get_user_display_name(user):
+    """دریافت نام نمایشی کاربر به صورت ایمن"""
+    if not user.is_authenticated:
+        return "کاربر ناشناس"
+
+    # اولویت ۱: get_full_name اگر تابع باشد
+    if hasattr(user, 'get_full_name'):
+        if callable(user.get_full_name):
+            try:
+                result = user.get_full_name()
+                if result and result.strip():
+                    return result.strip()
+            except Exception:
+                pass
+        else:
+            # اگر property باشد
+            try:
+                if user.get_full_name and user.get_full_name.strip():
+                    return user.get_full_name.strip()
+            except Exception:
+                pass
+
+    # اولویت ۲: first_name و last_name
+    first_name = getattr(user, 'first_name', '')
+    last_name = getattr(user, 'last_name', '')
+
+    if first_name or last_name:
+        name_parts = []
+        if first_name and first_name.strip():
+            name_parts.append(first_name.strip())
+        if last_name and last_name.strip():
+            name_parts.append(last_name.strip())
+        if name_parts:
+            return ' '.join(name_parts)
+
+    # اولویت ۳: username
+    username = getattr(user, 'username', '')
+    if username and username.strip():
+        return username.strip()
+
+    # آخرین راه‌حل
+    return str(user)
 
 # ==================== Invitation Management Views ====================
 

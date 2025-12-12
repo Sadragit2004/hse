@@ -786,7 +786,7 @@
                         <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>پروفایل</a></li>
                         <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>تنظیمات</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>خروج</a></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'account:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>خروج</a></li>
                     </ul>
                 </div>
             </div>
@@ -807,7 +807,9 @@
         {% endif %}
 
         <div class="d-flex justify-content-between align-items-center mb-4 page-title-container animate-fadeIn">
-           
+            <h2 class="mb-0">
+                {% block page_title %}{{ page_title|default:"داشبورد اصلی" }}{% endblock %}
+            </h2>
             {% block page_actions %}{% endblock %}
         </div>
 
@@ -832,7 +834,6 @@
         $(document).ready(function() {
             const sidebar = $('.sidebar');
             const sidebarToggle = $('#sidebarToggle');
-            const sidebarClose = $('#sidebarClose');
             const sidebarOverlay = $('#sidebarOverlay');
 
             function toggleSidebar() {
@@ -850,17 +851,37 @@
             // باز کردن سایدبار با دکمه بالا
             sidebarToggle.on('click', toggleSidebar);
 
-            // بستن سایدبار با دکمه Close (X) داخل سایدبار
-            sidebarClose.on('click', toggleSidebar);
-
             // بستن سایدبار با کلیک روی Overlay
             sidebarOverlay.on('click', toggleSidebar);
 
             // بستن سایدبار هنگام کلیک روی هر لینک در موبایل
-            $('.nav-link').on('click', function() {
+            // **تغییر مهم: جلوگیری از انتشار رویداد برای لینک‌های داخل آکاردئون**
+            $(document).on('click', '.nav-link', function(e) {
+                // فقط برای موبایل
                 if ($(window).width() <= 768) {
-                    // تاخیر کوتاه برای نمایش تغییر صفحه قبل از بستن
-                    setTimeout(toggleSidebar, 300);
+                    // اگر لینک داخل آکاردئون است، جلوگیری از انتشار رویداد
+                    if ($(this).closest('.accordion-body').length > 0) {
+                        e.stopPropagation(); // جلوگیری از انتشار رویداد به والد
+                        // فقط سایدبار را ببند، آکاردئون را باز نگه دار
+                        setTimeout(toggleSidebar, 300);
+                    } else {
+                        // برای لینک‌های معمولی
+                        setTimeout(toggleSidebar, 300);
+                    }
+                }
+            });
+
+            // جلوگیری از انتشار رویداد کلیک روی دکمه آکاردئون در موبایل
+            $('.accordion-button').on('click', function(e) {
+                if ($(window).width() <= 768) {
+                    // فقط در موبایل: جلوگیری از بسته شدن سایدبار
+                    e.stopPropagation();
+                    // باز/بسته کردن آکاردئون
+                    $(this).toggleClass('collapsed');
+                    $(this).attr('aria-expanded', function(i, attr) {
+                        return attr === 'true' ? 'false' : 'true';
+                    });
+                    $($(this).attr('data-bs-target')).collapse('toggle');
                 }
             });
 

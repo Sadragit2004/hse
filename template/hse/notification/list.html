@@ -31,7 +31,8 @@
                 <div class="list-group">
                     {% for item in page_obj.object_list %}
                     {% with notification=item.notification invitation=item.invitation can_respond=item.can_respond %}
-                    <div class="list-group-item list-group-item-action {% if not notification.is_read %}list-group-item-light{% endif %}">
+                    <div class="list-group-item list-group-item-action {% if not notification.is_read %}list-group-item-light{% endif %}"
+                         id="notification-{{ notification.id }}">
                         <div class="d-flex w-100 justify-content-between align-items-start">
                             <div class="flex-grow-1 me-3">
                                 <div class="d-flex align-items-center mb-2">
@@ -68,17 +69,19 @@
 
                                 <!-- دکمه‌های اقدام برای دعوت‌نامه‌ها -->
                                 {% if notification.notification_type == 'INVITATION' and invitation %}
-                                <div class="mt-3">
+                                <div class="mt-3" id="invitation-container-{{ invitation.token }}">
                                     {% if can_respond %}
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex gap-2" id="invitation-buttons-{{ invitation.token }}">
                                         <button type="button"
                                                 class="btn btn-sm btn-success"
-                                                onclick="acceptInvitation('{{ invitation.token }}', '{{ invitation.company.name }}')">
+                                                onclick="acceptInvitation('{{ invitation.token }}', '{{ invitation.company.name|escapejs }}')"
+                                                id="accept-btn-{{ invitation.token }}">
                                             <i class="fas fa-check me-1"></i>پذیرش دعوت
                                         </button>
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-danger"
-                                                onclick="rejectInvitation('{{ invitation.token }}', '{{ invitation.company.name }}')">
+                                                onclick="rejectInvitation('{{ invitation.token }}', '{{ invitation.company.name|escapejs }}')"
+                                                id="reject-btn-{{ invitation.token }}">
                                             <i class="fas fa-times me-1"></i>رد دعوت
                                         </button>
                                     </div>
@@ -110,7 +113,7 @@
                                     {{ notification.created_at|time }}
                                 </small>
                                 {% if not notification.is_read %}
-                                <span class="badge bg-primary mt-1">جدید</span>
+                                <span class="badge bg-primary mt-1" id="new-badge-{{ notification.id }}">جدید</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -186,123 +189,7 @@
 
 {% block extra_js %}
 <script>
-// پذیرش دعوت
-function acceptInvitation(token, companyName) {
-    if (confirm(`آیا از پذیرش دعوت به شرکت ${companyName} مطمئن هستید؟`)) {
-        fetch(`{% url 'hse:invitation_accept' 'TOKEN_PLACEHOLDER' %}`.replace('TOKEN_PLACEHOLDER', token), {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('success', data.message || 'دعوت با موفقیت پذیرفته شد');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            } else {
-                showToast('error', data.error || 'خطا در پذیرش دعوت');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('error', 'خطا در برقراری ارتباط با سرور');
-        });
-    }
-}
-
-// رد دعوت
-function rejectInvitation(token, companyName) {
-    if (confirm(`آیا از رد دعوت شرکت ${companyName} مطمئن هستید؟`)) {
-        fetch(`{% url 'hse:invitation_reject' 'TOKEN_PLACEHOLDER' %}`.replace('TOKEN_PLACEHOLDER', token), {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('success', data.message || 'دعوت با موفقیت رد شد');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            } else {
-                showToast('error', data.error || 'خطا در رد دعوت');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('error', 'خطا در برقراری ارتباط با سرور');
-        });
-    }
-}
-
-// علامت‌گذاری همه اعلان‌ها به عنوان خوانده شده
-function markAllAsRead() {
-    if (confirm('آیا می‌خواهید همه اعلان‌ها را به عنوان خوانده شده علامت بزنید؟')) {
-        fetch("{% url 'hse:mark_all_notifications_read' %}", {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                showToast('error', 'خطا در بروزرسانی اعلان‌ها');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('error', 'خطا در برقراری ارتباط با سرور');
-        });
-    }
-}
-
-// نمایش toast
-function showToast(type, message) {
-    // اگر toastr موجود است استفاده کن
-    if (typeof toastr !== 'undefined') {
-        toastr[type](message);
-    } else {
-        // ایجاد toast ساده
-        const toastHtml = `
-            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
-                <div class="toast align-items-center text-bg-${type} border-0" role="alert">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const container = document.createElement('div');
-        container.innerHTML = toastHtml;
-        document.body.appendChild(container);
-
-        const toastElement = container.querySelector('.toast');
-        const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
-        toast.show();
-
-        toastElement.addEventListener('hidden.bs.toast', function () {
-            container.remove();
-        });
-    }
-}
-
-// تابع دریافت cookie
+// تابع‌های کمکی
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -316,6 +203,198 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+function showToast(type, message) {
+    // استفاده از toastr اگر موجود است
+    if (typeof toastr !== 'undefined') {
+        toastr[type](message);
+    } else {
+        // ایجاد toast ساده با Bootstrap
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
+                <div class="toast align-items-center text-bg-${type} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', toastHtml);
+
+        const toastElement = document.getElementById(toastId).querySelector('.toast');
+        const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+        toast.show();
+
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            this.closest('.position-fixed').remove();
+        });
+    }
+}
+
+// غیرفعال کردن دکمه‌های دعوت
+function disableInvitationButtons(token) {
+    const acceptBtn = document.getElementById(`accept-btn-${token}`);
+    const rejectBtn = document.getElementById(`reject-btn-${token}`);
+
+    if (acceptBtn) {
+        acceptBtn.disabled = true;
+        acceptBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>در حال پردازش...';
+    }
+
+    if (rejectBtn) {
+        rejectBtn.disabled = true;
+        rejectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>در حال پردازش...';
+    }
+}
+
+// فعال کردن دکمه‌های دعوت
+function enableInvitationButtons(token) {
+    const acceptBtn = document.getElementById(`accept-btn-${token}`);
+    const rejectBtn = document.getElementById(`reject-btn-${token}`);
+
+    if (acceptBtn) {
+        acceptBtn.disabled = false;
+        acceptBtn.innerHTML = '<i class="fas fa-check me-1"></i>پذیرش دعوت';
+    }
+
+    if (rejectBtn) {
+        rejectBtn.disabled = false;
+        rejectBtn.innerHTML = '<i class="fas fa-times me-1"></i>رد دعوت';
+    }
+}
+
+// آپدیت UI بعد از پاسخ به دعوت
+function updateInvitationUI(token, status, message) {
+    const container = document.getElementById(`invitation-container-${token}`);
+    const buttons = document.getElementById(`invitation-buttons-${token}`);
+
+    if (container && buttons) {
+        // حذف دکمه‌ها
+        buttons.remove();
+
+        // اضافه کردن پیام جدید
+        const statusText = status === 'ACCEPTED' ? 'پذیرفته' : 'رد';
+        const alertClass = status === 'ACCEPTED' ? 'alert-success' : 'alert-info';
+
+        const newHtml = `
+            <div class="alert ${alertClass} py-1 px-2 mb-0" style="font-size: 0.85rem;">
+                <i class="fas fa-check-circle me-1"></i>
+                دعوت ${statusText} شده است
+                ${message ? `<br><small>${message}</small>` : ''}
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', newHtml);
+    }
+}
+
+// پذیرش دعوت
+function acceptInvitation(token, companyName) {
+    if (confirm(`آیا از پذیرش دعوت به شرکت ${companyName} مطمئن هستید؟`)) {
+        disableInvitationButtons(token);
+
+        fetch(`{% url 'hse:invitation_accept' 'TOKEN_PLACEHOLDER' %}`.replace('TOKEN_PLACEHOLDER', token), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateInvitationUI(token, data.status, data.message);
+                showToast('success', data.message || 'دعوت با موفقیت پذیرفته شد');
+
+                // آپدیت badge نوتیفیکیشن
+                setTimeout(() => {
+                    if (typeof updateNotificationBadge === 'function') {
+                        updateNotificationBadge();
+                    }
+                }, 1000);
+            } else {
+                enableInvitationButtons(token);
+                showToast('error', data.error || 'خطا در پذیرش دعوت');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            enableInvitationButtons(token);
+            showToast('error', 'خطا در برقراری ارتباط با سرور');
+        });
+    }
+}
+
+// رد دعوت
+function rejectInvitation(token, companyName) {
+    if (confirm(`آیا از رد دعوت شرکت ${companyName} مطمئن هستید؟`)) {
+        disableInvitationButtons(token);
+
+        fetch(`{% url 'hse:invitation_reject' 'TOKEN_PLACEHOLDER' %}`.replace('TOKEN_PLACEHOLDER', token), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateInvitationUI(token, data.status, data.message);
+                showToast('success', data.message || 'دعوت با موفقیت رد شد');
+
+                // آپدیت badge نوتیفیکیشن
+                setTimeout(() => {
+                    if (typeof updateNotificationBadge === 'function') {
+                        updateNotificationBadge();
+                    }
+                }, 1000);
+            } else {
+                enableInvitationButtons(token);
+                showToast('error', data.error || 'خطا در رد دعوت');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            enableInvitationButtons(token);
+            showToast('error', 'خطا در برقراری ارتباط با سرور');
+        });
+    }
+}
+
+// علامت‌گذاری همه اعلان‌ها به عنوان خوانده شده
+function markAllAsRead() {
+    if (confirm('آیا می‌خواهید همه اعلان‌ها را به عنوان خوانده شده علامت بزنید؟')) {
+        fetch("{% url 'hse:mark_all_notifications_read' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('success', 'همه اعلان‌ها خوانده شده علامت زده شدند');
+                // ریفرش صفحه بعد از 1 ثانیه
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showToast('error', 'خطا در بروزرسانی اعلان‌ها');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'خطا در برقراری ارتباط با سرور');
+        });
+    }
 }
 </script>
 
@@ -332,6 +411,12 @@ function getCookie(name) {
 
 .list-group-item:hover {
     background-color: #f1f3f4;
+}
+
+/* استایل برای دکمه‌های غیرفعال */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 </style>
 {% endblock %}
