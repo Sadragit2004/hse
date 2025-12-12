@@ -213,9 +213,7 @@
                                     {{ dept.employee_count }} کارمند
                                 </small>
                             </div>
-                            {% if dept.manager %}
-                            <span class="badge bg-info">{{ dept.manager.user.get_full_name|default:dept.manager.user.mobileNumber }}</span>
-                            {% endif %}
+                            
                         </div>
                     </div>
                     {% endfor %}

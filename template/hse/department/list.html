@@ -112,7 +112,7 @@
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-user-tie text-success me-2"></i>
                                         <div>
-                                            <div>{{ department.manager.user.get_full_name|default:department.manager.user.mobileNumber }}</div>
+                                            {% comment %} <div>{{ department.manager.user.full_name|default:department.manager.user.mobileNumber }}</div> {% endcomment %}
                                             <small class="text-muted">{{ department.manager.get_position_display }}</small>
                                         </div>
                                     </div>

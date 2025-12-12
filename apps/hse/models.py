@@ -53,6 +53,7 @@ class CompanyDepartment(models.Model):
         related_name='managed_departments',
         verbose_name='مدیر بخش'
     )
+    description = models.TextField(blank=True, verbose_name='توضیحات')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='تاریخ بروزرسانی')
     is_active = models.BooleanField(default=True, verbose_name='فعال')

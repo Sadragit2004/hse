@@ -245,25 +245,116 @@ def department_list(request, company_id):
     }
     return render(request, 'hse/department/list.html', context)
 
-
 @login_required_company_member
 def department_create(request, company_id):
     """ایجاد بخش جدید"""
     company = get_object_or_404(Company, id=company_id)
 
     if request.method == 'POST':
-        form = CompanyDepartmentForm(request.POST)
-        if form.is_valid():
-            department = form.save(commit=False)
-            department.company = company
+        # دریافت داده‌ها از فرم
+        name = request.POST.get('name', '').strip()
+        employee_count = request.POST.get('employee_count', '1')
+        manager_id = request.POST.get('manager', '')
+        description = request.POST.get('description', '')
+        is_active = request.POST.get('is_active') == 'on'
+
+        # اعتبارسنجی
+        errors = {}
+
+        # اعتبارسنجی نام
+        if not name:
+            errors['name'] = 'نام بخش الزامی است'
+        elif len(name) < 2:
+            errors['name'] = 'نام بخش باید حداقل ۲ حرف باشد'
+
+        # اعتبارسنجی تعداد کارکنان
+        try:
+            employee_count_int = int(employee_count)
+            if employee_count_int < 1:
+                errors['employee_count'] = 'تعداد کارکنان باید حداقل ۱ باشد'
+        except ValueError:
+            errors['employee_count'] = 'لطفا عدد معتبر وارد کنید'
+
+        # اگر خطایی وجود دارد
+        if errors:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': errors
+                })
+            else:
+                context = {
+                    'company': company,
+                    'errors': errors,
+                    'form_data': request.POST
+                }
+                return render(request, 'hse/department/create.html', context)
+
+        # ایجاد بخش
+        try:
+            department = CompanyDepartment(
+                company=company,
+                name=name,
+                employee_count=employee_count_int,
+                description=description,
+                is_active=is_active
+            )
+
+            # اگر مدیر انتخاب شده باشد
+            if manager_id:
+                try:
+                    # ابتدا از CustomUser پیدا کنید
+                    manager_user = CustomUser.objects.get(id=manager_id)
+                    # سپس از CompanyMember مربوطه پیدا کنید
+                    company_member = CompanyMember.objects.filter(
+                        company=company,
+                        user=manager_user
+                    ).first()
+
+                    if company_member:
+                        department.manager = manager_user  # نه CompanyMember
+                    else:
+                        errors['manager'] = 'کاربر انتخاب شده عضو این شرکت نیست'
+                except CustomUser.DoesNotExist:
+                    errors['manager'] = 'کاربر انتخاب شده وجود ندارد'
+
+            # ذخیره بخش
             department.save()
+
+            # پاسخ AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'بخش با موفقیت ایجاد شد',
+                    'redirect': reverse('hse:department_list', args=[company.id])
+                })
+
+            # پاسخ معمول
             messages.success(request, 'بخش با موفقیت ایجاد شد.')
             return redirect('hse:department_list', company_id=company.id)
-    else:
-        form = CompanyDepartmentForm()
 
+        except Exception as e:
+            error_msg = str(e)
+            if 'unique' in error_msg.lower():
+                errors['name'] = 'بخش با این نام قبلاً ثبت شده است'
+            else:
+                errors['__all__'] = f'خطا در ایجاد بخش: {error_msg}'
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': errors
+                })
+            else:
+                context = {
+                    'company': company,
+                    'errors': errors,
+                    'form_data': request.POST
+                }
+                return render(request, 'hse/department/create.html', context)
+
+    # GET request
     context = {
-        'form': form,
         'company': company,
         'page_title': 'ایجاد بخش جدید'
     }

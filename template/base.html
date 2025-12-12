@@ -14,24 +14,30 @@
     <style>
         :root {
             /* Palette مدرن‌تر */
-            --primary: #007bff;
-            --secondary: #6c757d;
-            --success: #28a745;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --info: #17a2b8;
+            --primary: #1a5f7a;
+            --primary-light: #2c8f9e;
+            --secondary: #57cc99;
+            --accent: #ffd166;
+            --danger: #ef476f;
+            --warning: #ff9a3c;
+            --dark: #1d3557;
+            --light: #f8f9fa;
+            --white: #ffffff;
 
             /* رنگ‌های پنل */
             --sidebar-bg: #212529;
             --sidebar-link-hover: rgba(255, 255, 255, 0.1);
-            --sidebar-active: #007bff;
-            --bg-light: #f8f9fa;
+            --sidebar-active: #1a5f7a;
+            --bg-light: #f5f9ff;
         }
 
         body {
             font-family: 'Vazirmatn', sans-serif;
             background: var(--bg-light);
             color: #333;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(86, 180, 211, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(87, 204, 153, 0.05) 0%, transparent 20%);
         }
 
         /* ------------------------------------------------------------------ */
@@ -45,15 +51,17 @@
             position: fixed;
             right: 0;
             top: 0;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
             z-index: 1050;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
         }
 
         .main-content {
             margin-right: 250px; /* فضای رزرو شده سایدبار در دسکتاپ */
             padding: 20px;
             transition: all 0.3s;
+            min-height: 100vh;
         }
 
         /* Overlay برای موبایل */
@@ -117,85 +125,530 @@
         }
 
         /* ------------------------------------------------------------------ */
-        /* 🎨 استایل‌های بصری (از نسخه قبلی) */
+        /* 🎨 استایل‌های بصری جدید و بهبود یافته */
         /* ------------------------------------------------------------------ */
 
+        /* لوگو در سایدبار */
+        .sidebar-logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .logo-container-sidebar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .logo-img-sidebar {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 1);
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            object-fit: contain;
+        }
+
+        .logo-text-sidebar h4 {
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .logo-text-sidebar small {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+        }
+
+        .logo-highlight {
+            color: var(--accent);
+            position: relative;
+        }
+
+        .logo-highlight::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            right: 0;
+            width: 100%;
+            height: 4px;
+            background-color: var(--accent);
+            opacity: 0.4;
+            border-radius: 2px;
+        }
+
+        /* نویگیشن سایدبار */
         .nav-link {
             color: #adb5bd;
-            padding: 12px 20px;
+            padding: 14px 20px;
             margin: 5px 10px;
-            border-radius: 8px;
-            transition: all 0.2s;
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
             display: flex;
             align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: -1;
+        }
+
+        .nav-link:hover::before {
+            transform: translateX(0);
         }
 
         .nav-link:hover {
             color: white;
             background: var(--sidebar-link-hover);
+            transform: translateX(-5px);
         }
 
         .nav-link.active {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white;
-            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.5);
+            box-shadow: 0 4px 12px rgba(26, 95, 122, 0.4);
+            transform: translateX(-5px);
         }
 
         .nav-link i {
-            width: 20px;
+            width: 24px;
             margin-left: 10px;
             text-align: center;
             font-size: 1.1rem;
+            transition: transform 0.3s ease;
         }
 
-        /* بقیه استایل‌های بصری (Card, Stat-Card, Button, Table, etc.) اینجا تکرار می‌شوند */
-        .sidebar .p-4 h4 { font-weight: 700; }
-        .sidebar .nav-link.text-danger { color: var(--danger) !important; }
-        .sidebar .nav-link.text-danger:hover { background: rgba(220, 53, 69, 0.1); color: var(--danger) !important; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); margin-bottom: 25px; }
-        .card-header { background: white; border-bottom: 1px solid #eee; border-radius: 12px 12px 0 0 !important; padding: 15px 20px; font-weight: 600; font-size: 1.1rem; color: var(--primary); }
-        .stat-card { padding: 25px; border-radius: 12px; color: white; text-align: right; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .stat-card .number { font-size: 2.5rem; font-weight: bold; display: block; }
-        .stat-card .title { opacity: 0.8; font-size: 0.9rem; }
-        .stat-card i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 4rem; opacity: 0.2; }
-        .badge { padding: 7px 14px; border-radius: 50px; font-weight: 600; font-size: 0.85rem; }
-        .btn { border-radius: 8px; padding: 10px 25px; font-weight: 500; transition: all 0.2s; }
-        .table { border-radius: 10px; overflow: hidden; }
-        .table th { background: #e9ecef; color: #495057; font-weight: 600; border-bottom: 2px solid #dee2e6; }
-        .form-control, .form-select { border-radius: 8px; padding: 10px 15px; border: 1px solid #ced4da; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
-        .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); }
-        .alert { border-radius: 10px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-weight: 500; }
-        .navbar { border-radius: 12px !important; padding: 10px 20px; }
-        .page-title-container h2 { font-weight: 700; color: #212529; font-size: 1.8rem; }
-        .dropdown-menu { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        /* استایل‌های آکاردئون (زیرمنو) */
-        .accordion-button { background: transparent !important; color: #adb5bd !important; box-shadow: none !important; padding: 12px 20px; font-weight: 500; }
-        .accordion-button:not(.collapsed) { color: white !important; background: var(--sidebar-link-hover) !important; }
-        .accordion-collapse { border: none !important; }
-        .accordion-body { padding: 0; }
-        .accordion-body .nav-link { padding-right: 40px; font-size: 0.95rem; }
+        .nav-link:hover i {
+            transform: scale(1.1);
+        }
 
+        .nav-link.active i {
+            color: var(--accent);
+        }
+
+        /* بدج نوتیفیکیشن */
+        #notification-badge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* هدر اصلی */
+        .navbar {
+            background: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            position: sticky;
+            top: 10px;
+            z-index: 1030;
+        }
+
+        .navbar-brand h5 {
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .navbar-brand h5 i {
+            color: var(--primary);
+        }
+
+        /* دکمه‌ها */
+        .btn {
+            border-radius: 10px;
+            padding: 10px 25px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            border: none;
+        }
+
+        .btn-outline-secondary {
+            border: 1px solid #dee2e6;
+            color: #6c757d;
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(26, 95, 122, 0.25);
+        }
+
+        /* کارت‌ها */
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #eee;
+            border-radius: 16px 16px 0 0 !important;
+            padding: 18px 25px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary);
+            position: relative;
+        }
+
+        .card-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            opacity: 0.3;
+        }
+
+        /* کارت آمار */
+        .stat-card {
+            padding: 30px;
+            border-radius: 16px;
+            color: white;
+            text-align: right;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            z-index: 1;
+        }
+
+        .stat-card .number {
+            font-size: 2.8rem;
+            font-weight: bold;
+            display: block;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-card .title {
+            opacity: 0.9;
+            font-size: 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-card i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 5rem;
+            opacity: 0.2;
+            z-index: 1;
+        }
+
+        /* تیتر صفحه */
+        .page-title-container {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-title-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary) 0%, var(--secondary) 100%);
+        }
+
+        .page-title-container h2 {
+            font-weight: 800;
+            color: var(--dark);
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        /* جداول */
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            color: var(--dark);
+            font-weight: 700;
+            border-bottom: 2px solid #dee2e6;
+            padding: 16px 12px;
+        }
+
+        .table td {
+            padding: 14px 12px;
+            vertical-align: middle;
+            border-color: #eee;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(26, 95, 122, 0.05);
+            transform: translateX(-3px);
+        }
+
+        /* فرم‌ها */
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px 18px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.25rem rgba(26, 95, 122, 0.25);
+            transform: translateY(-2px);
+        }
+
+        /* اعلان‌ها */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            font-weight: 600;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+
+        /* منوی دراپ‌داون */
+        .dropdown-menu {
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .dropdown-item {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 3px 0;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(26, 95, 122, 0.1);
+            color: var(--primary);
+            transform: translateX(-5px);
+        }
+
+        /* آکاردئون */
+        .accordion-button {
+            background: transparent !important;
+            color: #adb5bd !important;
+            box-shadow: none !important;
+            padding: 14px 20px;
+            font-weight: 600;
+            border-radius: 10px !important;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-button:not(.collapsed) {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .accordion-button:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .accordion-button::after {
+            margin-right: auto;
+            margin-left: 10px;
+            transform: rotate(90deg);
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-button:not(.collapsed)::after {
+            transform: rotate(-90deg);
+        }
+
+        .accordion-collapse {
+            border: none !important;
+        }
+
+        .accordion-body {
+            padding: 0 10px 10px 10px;
+        }
+
+        .accordion-body .nav-link {
+            padding-right: 40px;
+            font-size: 0.95rem;
+            margin: 3px 0;
+        }
+
+        .accordion-body .nav-link.active-sub {
+            background: rgba(26, 95, 122, 0.2);
+            color: white;
+        }
+
+        /* بخش پایانی سایدبار */
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-footer .nav-link {
+            margin: 5px 0;
+        }
+
+        /* اسکرول بار سفارشی برای سایدبار */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* انیمیشن‌ها */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* استایل برای ریسپانسیو بودن بهتر */
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 15px;
+            }
+
+            .stat-card {
+                padding: 20px;
+                min-height: 140px;
+            }
+
+            .stat-card .number {
+                font-size: 2.2rem;
+            }
+
+            .page-title-container {
+                padding: 20px;
+            }
+
+            .page-title-container h2 {
+                font-size: 1.6rem;
+            }
+        }
+
+        /* فوت‌نوت در پایین صفحه */
+        .footer-note {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+        }
+
+        .footer-note img {
+            width: 30px;
+            height: 30px;
+            margin: 0 10px;
+            vertical-align: middle;
+            opacity: 0.7;
+        }
     </style>
 </head>
-<body style=" font-family: 'Vazirmatn', sans-serif;">
+<body>
 
     <div class="sidebar">
-        <div class="p-4 d-flex justify-content-between align-items-center">
-            <h4 class="text-white mb-0">
-                <i class="fas fa-shield-alt text-primary me-2"></i>
-                HSE
-            </h4>
-             <button class="btn btn-outline-light d-md-none" id="sidebarClose">
-                <i class="fas fa-times"></i>
-            </button>
+        <!-- لوگو در سایدبار -->
+        <div class="sidebar-logo">
+            <a href="/" class="logo-container-sidebar">
+                <img src="/media/img/logo.png" alt="لوگوی HSE" class="logo-img-sidebar"
+                     onerror="this.src='https://cdn-icons-png.flaticon.com/512/1998/1998673.png'">
+                <div class="logo-text-sidebar">
+                    <h4>پنل <span class="logo-highlight">HSE</span></h4>
+                    <small>مدیریت ایمنی و بهداشت</small>
+                </div>
+            </a>
         </div>
-        <small class="text-white-50 px-4">مدیریت ایمنی و بهداشت</small>
 
-
-        <hr class="border-secondary mx-3">
+        <hr class="border-secondary mx-3 my-2">
 
         <nav class="nav flex-column">
-
             {% if company %}
             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
                href="{% url 'hse:dashboard' company.id %}">
@@ -290,11 +743,11 @@
 
             <a class="nav-link {% if request.resolver_match.url_name == 'company_list' %}active{% endif %}"
                href="{% url 'hse:servicelist' %}">
-                <i class="fas fa-list"></i>
+                <i class="fas fa-cogs"></i>
                خدمات ما
             </a>
 
-            <div class="mt-auto pt-3 border-top border-secondary mx-3">
+            <div class="sidebar-footer mt-auto">
                 <a class="nav-link text-danger" href="#">
                     <i class="fas fa-sign-out-alt"></i>
                     خروج
@@ -306,15 +759,21 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="main-content">
-        <nav class="navbar navbar-light bg-white rounded-3 shadow-sm mb-4">
+        <nav class="navbar navbar-light bg-white rounded-3 shadow-sm mb-4 animate-fadeIn">
             <div class="container-fluid">
                 <button class="btn btn-outline-secondary d-md-none" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
 
                 <div class="navbar-brand me-auto ms-3">
-                    <h5 class="mb-0 text-primary">
-                        {% if company %}<i class="fas fa-industry me-2"></i>{{ company.name }}{% else %}<i class="fas fa-shield-alt me-2"></i>سیستم HSE{% endif %}
+                    <h5 class="mb-0">
+                        {% if company %}
+                        <i class="fas fa-industry me-2" style="color: var(--primary);"></i>
+                        {{ company.name }}
+                        {% else %}
+                        <i class="fas fa-shield-alt me-2" style="color: var(--primary);"></i>
+                        <span style="color: var(--dark); font-weight: 700;">سیستم HSE</span>
+                        {% endif %}
                     </h5>
                 </div>
 
@@ -325,6 +784,7 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-start">
                         <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>پروفایل</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>تنظیمات</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>خروج</a></li>
                     </ul>
@@ -333,24 +793,35 @@
         </nav>
 
         {% if messages %}
-        <div class="messages mb-4">
+        <div class="messages mb-4 animate-fadeIn">
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                {{ message }}
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                    <div>{{ message }}</div>
+                </div>
                 <button type="button" class="btn-close me-auto" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             {% endfor %}
         </div>
         {% endif %}
 
-        <div class="d-flex justify-content-between align-items-center mb-4 page-title-container">
-            <h2 class="mb-0">
-                {% block page_title %}{{ page_title|default:"داشبورد اصلی" }}{% endblock %}
-            </h2>
+        <div class="d-flex justify-content-between align-items-center mb-4 page-title-container animate-fadeIn">
+           
             {% block page_actions %}{% endblock %}
         </div>
 
         {% block content %}{% endblock %}
+
+        <!-- فوت‌نوت با لوگو -->
+        <div class="footer-note animate-fadeIn">
+            <p>
+                <img src="/media/img/logo.png" alt="لوگوی HSE"
+                     onerror="this.src='https://cdn-icons-png.flaticon.com/512/1998/1998673.png'">
+                کلیه حقوق این پنل متعلق به سیستم مدیریت HSE می‌باشد © ۲۰۲۳
+            </p>
+            <small>نسخه ۲.۰ | طراحی شده با <i class="fas fa-heart text-danger mx-1"></i> برای ایمنی بیشتر</small>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -369,8 +840,10 @@
                 if (sidebar.hasClass('active')) {
                     // جلوگیری از اسکرول بدنه زیر سایدبار
                     $('body').css('overflow', 'hidden');
+                    sidebarOverlay.fadeIn(200);
                 } else {
                     $('body').css('overflow', 'auto');
+                    sidebarOverlay.fadeOut(200);
                 }
             }
 
@@ -387,7 +860,18 @@
             $('.nav-link').on('click', function() {
                 if ($(window).width() <= 768) {
                     // تاخیر کوتاه برای نمایش تغییر صفحه قبل از بستن
-                    setTimeout(toggleSidebar, 200);
+                    setTimeout(toggleSidebar, 300);
+                }
+            });
+
+            // اسکرول نرم برای لینک‌های داخلی
+            $('a[href^="#"]').on('click', function(e) {
+                if (this.hash !== "") {
+                    e.preventDefault();
+                    const hash = this.hash;
+                    $('html, body').animate({
+                        scrollTop: $(hash).offset().top - 100
+                    }, 800, 'swing');
                 }
             });
 
@@ -413,7 +897,35 @@
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
+
+            // افزودن انیمیشن به عناصر هنگام اسکرول
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-fadeIn');
+                    }
+                });
+            }, observerOptions);
+
+            // مشاهده عناصر برای انیمیشن
+            document.querySelectorAll('.card, .stat-card').forEach(el => {
+                observer.observe(el);
+            });
+
+            // مدیریت خطای لوگو
+            $('.logo-img-sidebar').on('error', function() {
+                this.src = 'https://cdn-icons-png.flaticon.com/512/1998/1998673.png';
+            });
         });
+
+        // پیام کنسول برای توسعه‌دهندگان
+        console.log('%c🚀 پنل مدیریت HSE 🚀', 'color: #1a5f7a; font-size: 16px; font-weight: bold; padding: 5px;');
+        console.log('%c✨ سیستم مدیریت ایمنی و بهداشت | نسخه ۲.۰ ✨', 'color: #57cc99; font-size: 12px;');
     </script>
 
     {% block extra_js %}{% endblock %}
