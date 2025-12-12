@@ -42,7 +42,7 @@ class AuthService:
         security.isBan = False
         security.save()
         # TODO: ارسال پیامک واقعی
-        print(f"کد فعال‌سازی برای {security.user.mobileNumber}: {code}")
+
         return code
 
     @staticmethod
@@ -51,9 +51,9 @@ class AuthService:
         بررسی صحت و انقضای کد
         """
         if security.expireCode < timezone.now():
-            raise ValueError("⏳ کد منقضی شده است.")
+            raise ValueError(" کد منقضی شده است.")
         if not validate_activation_code(security, code):
-            raise ValueError("❌ کد واردشده معتبر نیست")
+            raise ValueError(" کد واردشده معتبر نیست")
         # پاکسازی کد بعد از موفقیت
         security.activeCode = None
         security.expireCode = None
