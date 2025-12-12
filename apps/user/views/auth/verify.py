@@ -62,9 +62,9 @@ def verify_code(request):
                 # اگر دعوت active داشت، پیام خاص نشان بده
                 if active_invitations.exists():
                     count = active_invitations.count()
-                    messages.info(request, f"✅ ثبت‌نام موفق! {count} دعوت‌نامه‌ی فعال دارید.")
+                    messages.info(request, f" ثبت‌نام موفق! {count} دعوت‌نامه‌ی فعال دارید.")
                 else:
-                    messages.success(request, "✅ ورود با موفقیت انجام شد.")
+                    messages.success(request, " ورود با موفقیت انجام شد.")
                 # ========== پایان بخش جدید ==========
 
                 return redirect(next_url or "main:index")

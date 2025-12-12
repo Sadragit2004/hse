@@ -16,7 +16,7 @@ def send_mobile(request):
             request.session["mobileNumber"] = mobile
             if next_url:
                 request.session["next_url"] = next_url
-            messages.success(request, "کد فعال‌سازی ارسال شد ✅")
+            messages.success(request, "کد فعال‌سازی ارسال شد ")
             return redirect("account:verify_code")
     else:
         form = MobileForm()
