@@ -245,6 +245,79 @@
             color: var(--accent);
         }
 
+        /* 🔧 استایل‌های اصلاح شده برای آکاردئون و ساختار سازمانی */
+        .accordion-body {
+            padding: 0 10px 10px 10px;
+            max-height: 300px; /* ارتفاع حداکثر برای اسکرول */
+            overflow-y: auto; /* فعال کردن اسکرول عمودی */
+            scrollbar-width: thin; /* برای مرورگرهای فایرفاکس */
+        }
+
+        /* استایل اسکرول‌بار سفارشی برای آکاردئون */
+        .accordion-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .accordion-body::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        .accordion-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .accordion-body::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* بهبود استایل لینک‌های داخل آکاردئون */
+        .accordion-body .nav-link {
+            padding: 12px 15px 12px 40px;
+            font-size: 0.9rem;
+            margin: 3px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .accordion-body .nav-link i {
+            font-size: 0.9rem;
+            margin-left: 8px;
+        }
+
+        /* استایل نشانگر اسکرول برای محتوای بلند */
+        .accordion-body:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            height: 20px;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.1));
+            pointer-events: none;
+            border-radius: 0 0 10px 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .accordion-body.scrollable:after {
+            opacity: 1;
+        }
+
+        /* بهبود رفتار در موبایل */
+        @media (max-width: 768px) {
+            .accordion-body {
+                max-height: 250px; /* ارتفاع کمتر در موبایل */
+            }
+
+            /* جلوگیری از باز شدن همزمان چند آکاردئون در موبایل */
+            .accordion-item {
+                margin-bottom: 5px;
+            }
+        }
+
         /* بدج نوتیفیکیشن */
         #notification-badge {
             animation: pulse 2s infinite;
@@ -526,21 +599,6 @@
 
         .accordion-collapse {
             border: none !important;
-        }
-
-        .accordion-body {
-            padding: 0 10px 10px 10px;
-        }
-
-        .accordion-body .nav-link {
-            padding-right: 40px;
-            font-size: 0.95rem;
-            margin: 3px 0;
-        }
-
-        .accordion-body .nav-link.active-sub {
-            background: rgba(26, 95, 122, 0.2);
-            color: white;
         }
 
         /* بخش پایانی سایدبار */
@@ -854,34 +912,18 @@
             // بستن سایدبار با کلیک روی Overlay
             sidebarOverlay.on('click', toggleSidebar);
 
-            // بستن سایدبار هنگام کلیک روی هر لینک در موبایل
-            // **تغییر مهم: جلوگیری از انتشار رویداد برای لینک‌های داخل آکاردئون**
-            $(document).on('click', '.nav-link', function(e) {
-                // فقط برای موبایل
+            // 🔧 بهبود کلیک روی لینک‌های داخل آکاردئون
+            $('.accordion-body .nav-link').on('click', function(e) {
                 if ($(window).width() <= 768) {
-                    // اگر لینک داخل آکاردئون است، جلوگیری از انتشار رویداد
-                    if ($(this).closest('.accordion-body').length > 0) {
-                        e.stopPropagation(); // جلوگیری از انتشار رویداد به والد
-                        // فقط سایدبار را ببند، آکاردئون را باز نگه دار
-                        setTimeout(toggleSidebar, 300);
-                    } else {
-                        // برای لینک‌های معمولی
-                        setTimeout(toggleSidebar, 300);
-                    }
-                }
-            });
-
-            // جلوگیری از انتشار رویداد کلیک روی دکمه آکاردئون در موبایل
-            $('.accordion-button').on('click', function(e) {
-                if ($(window).width() <= 768) {
-                    // فقط در موبایل: جلوگیری از بسته شدن سایدبار
-                    e.stopPropagation();
-                    // باز/بسته کردن آکاردئون
-                    $(this).toggleClass('collapsed');
-                    $(this).attr('aria-expanded', function(i, attr) {
-                        return attr === 'true' ? 'false' : 'true';
-                    });
-                    $($(this).attr('data-bs-target')).collapse('toggle');
+                    // فقط برای موبایل
+                    setTimeout(function() {
+                        // بستن سایدبار با تاخیر کمی
+                        if ($('.sidebar').hasClass('active')) {
+                            $('.sidebar').removeClass('active');
+                            $('body').css('overflow', 'auto');
+                            $('#sidebarOverlay').fadeOut(200);
+                        }
+                    }, 100);
                 }
             });
 
@@ -941,6 +983,69 @@
             // مدیریت خطای لوگو
             $('.logo-img-sidebar').on('error', function() {
                 this.src = 'https://cdn-icons-png.flaticon.com/512/1998/1998673.png';
+            });
+
+            // 🔧 عملکرد آکاردئون در موبایل
+            $('.accordion-button').on('click', function(e) {
+                const isMobile = $(window).width() <= 768;
+                const accordionBody = $($(this).attr('data-bs-target'));
+
+                if (isMobile) {
+                    // فقط در موبایل: جلوگیری از بسته شدن سایدبار
+                    e.stopPropagation();
+
+                    // اگر آکاردئون قبلاً باز است، آن را ببند
+                    if ($(this).hasClass('collapsed')) {
+                        // باز کردن آکاردئون
+                        $(this).removeClass('collapsed');
+                        $(this).attr('aria-expanded', 'true');
+                        accordionBody.collapse('show');
+                    } else {
+                        // بستن آکاردئون
+                        $(this).addClass('collapsed');
+                        $(this).attr('aria-expanded', 'false');
+                        accordionBody.collapse('hide');
+                    }
+
+                    // جلوگیری از اجرای رویداد پیش‌فرض بوت‌استرپ
+                    return false;
+                }
+            });
+
+            // 🔧 بررسی محتوای اسکرول‌پذیر در آکاردئون
+            function checkScrollableContent() {
+                $('.accordion-body').each(function() {
+                    const $this = $(this);
+                    if ($this[0].scrollHeight > $this.innerHeight()) {
+                        $this.addClass('scrollable');
+                    } else {
+                        $this.removeClass('scrollable');
+                    }
+                });
+            }
+
+            // بررسی محتوا پس از باز شدن آکاردئون
+            $('.accordion').on('shown.bs.collapse', function() {
+                setTimeout(checkScrollableContent, 300);
+            });
+
+            // بررسی اولیه
+            setTimeout(checkScrollableContent, 500);
+
+            // بررسی هنگام تغییر اندازه پنجره
+            $(window).on('resize', checkScrollableContent);
+
+            // بستن سایدبار هنگام کلیک روی لینک‌های معمولی (غیر آکاردئون)
+            $('.nav-link').not('.accordion-button').not('.accordion-body .nav-link').on('click', function(e) {
+                if ($(window).width() <= 768 && !$(this).hasClass('sidebar-logo')) {
+                    setTimeout(function() {
+                        if ($('.sidebar').hasClass('active')) {
+                            $('.sidebar').removeClass('active');
+                            $('body').css('overflow', 'auto');
+                            $('#sidebarOverlay').fadeOut(200);
+                        }
+                    }, 300);
+                }
             });
         });
 

@@ -1,0 +1,362 @@
+<!-- templates/hse/company/member_edit_partial.html -->
+<div class="member-edit-form">
+    <form method="post" id="editMemberForm"
+          data-member-id="{{ member.id }}"
+          data-company-id="{{ company.id }}">
+        {% csrf_token %}
+
+        <!-- اطلاعات شخصی -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-user me-2"></i>اطلاعات شخصی</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">نام:</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="first_name"
+                                       id="first_name"
+                                       value="{{ user.name|default:'' }}"
+                                       placeholder="نام">
+                                <small class="text-muted">نام جدید عضو</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">نام خانوادگی:</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="last_name"
+                                       id="last_name"
+                                       value="{{ user.family|default:'' }}"
+                                       placeholder="نام خانوادگی">
+                                <small class="text-muted">نام خانوادگی جدید عضو</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">شماره موبایل:</label>
+                                <input type="text"
+                                       class="form-control"
+                                       value="{{ user.mobileNumber }}"
+                                       disabled>
+                                <small class="text-muted">شماره موبایل قابل تغییر نیست</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ایمیل:</label>
+                                <input type="email"
+                                       class="form-control"
+                                       value="{{ user.email|default:'--' }}"
+                                       disabled>
+                                <small class="text-muted">ایمیل قابل تغییر نیست</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات شرکت -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-building me-2"></i>اطلاعات شرکت</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">سمت:</label>
+                                <select name="position" class="form-select" id="position">
+                                    <option value="">انتخاب کنید</option>
+                                    {% for value, display in member.Position.choices %}
+                                    <option value="{{ value }}"
+                                            {% if member.position == value %}selected{% endif %}>
+                                        {{ display }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">سمت عضو در شرکت</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">بخش:</label>
+                                <select name="department" class="form-select" id="department">
+                                    <option value="">بدون بخش</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.id }}"
+                                            {% if member.department.id == dept.id %}selected{% endif %}>
+                                        {{ dept.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">بخش مربوطه در شرکت</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">وضعیت:</label>
+                                <select name="status" class="form-select" id="status">
+                                    {% for value, display in member.Status.choices %}
+                                    <option value="{{ value }}"
+                                            {% if member.status == value %}selected{% endif %}>
+                                        {{ display }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">وضعیت عضویت در شرکت</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3" id="leaveDateField"
+                                 style="display: {% if member.status == 'INACTIVE' %}block{% else %}none{% endif %};">
+                                <label class="form-label">تاریخ ترک شرکت:</label>
+                                <input type="date"
+                                       class="form-control"
+                                       name="leave_date"
+                                       id="leaveDateInput"
+                                       value="{{ member.leave_date|date:'Y-m-d'|default:'' }}">
+                                <small class="text-muted">فقط برای وضعیت غیرفعال</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات خواندنی -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>اطلاعات سیستمی:</strong>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <small><strong>تاریخ عضویت:</strong> {{ member.join_date|date:"Y/m/d" }}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <small><strong>آخرین بروزرسانی:</strong> {{ member.updated_at|date:"Y/m/d H:i" }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- دکمه‌های عملیات -->
+        <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fas fa-times me-2"></i>انصراف
+            </button>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-danger" onclick="deleteMember()">
+                    <i class="fas fa-trash me-2"></i>حذف
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>ذخیره تغییرات
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+$(document).ready(function() {
+    // مدیریت نمایش/عدم نمایش تاریخ ترک
+    $('#status').change(function() {
+        if ($(this).val() === 'INACTIVE') {
+            $('#leaveDateField').show();
+        } else {
+            $('#leaveDateField').hide();
+            $('#leaveDateInput').val('');
+        }
+    });
+
+    // ارسال فرم ویرایش
+    $('#editMemberForm').submit(function(e) {
+        e.preventDefault();
+
+        const formData = $(this).serialize();
+        const memberId = $(this).data('member-id');
+        const companyId = $(this).data('company-id');
+
+        // نمایش لودر
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalHtml = submitBtn.html();
+        submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>در حال ذخیره...');
+        submitBtn.prop('disabled', true);
+
+        $.ajax({
+            url: `/hse/${companyId}/members/${memberId}/edit/`,
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                // بازگرداندن دکمه به حالت عادی
+                submitBtn.html(originalHtml);
+                submitBtn.prop('disabled', false);
+
+                if (response.success) {
+                    showToast('success', response.message);
+                    $('.modal').modal('hide');
+
+                    // بروزرسانی صفحه پس از 1.5 ثانیه
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    // نمایش خطاها
+                    if (response.errors) {
+                        for (const field in response.errors) {
+                            showToast('error', response.errors[field][0]);
+                        }
+                    } else if (response.error) {
+                        showToast('error', response.error);
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                // بازگرداندن دکمه به حالت عادی
+                submitBtn.html(originalHtml);
+                submitBtn.prop('disabled', false);
+
+                showToast('error', 'خطا در ارسال اطلاعات');
+                console.error('Error:', error);
+            }
+        });
+    });
+
+    // اعتبارسنجی فرم
+    $('#editMemberForm').on('input', 'input, select', function() {
+        const input = $(this);
+        if (input.hasClass('is-invalid')) {
+            input.removeClass('is-invalid');
+        }
+    });
+});
+
+// تابع حذف عضو
+function deleteMember() {
+    const memberId = $('#editMemberForm').data('member-id');
+    const companyId = $('#editMemberForm').data('company-id');
+
+    if (confirm('آیا از حذف این عضو اطمینان دارید؟ این عمل غیرقابل بازگشت است.')) {
+        $.ajax({
+            url: `/hse/${companyId}/members/${memberId}/delete/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                if (response.success) {
+                    showToast('success', response.message);
+                    $('.modal').modal('hide');
+
+                    // هدایت به لیست اعضا پس از 1.5 ثانیه
+                    setTimeout(function() {
+                        window.location.href = `/hse/${companyId}/members/`;
+                    }, 1500);
+                } else {
+                    showToast('error', response.error || 'خطا در حذف عضو');
+                }
+            },
+            error: function() {
+                showToast('error', 'خطا در حذف عضو');
+            }
+        });
+    }
+}
+
+// تابع getCookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// تابع showToast
+function showToast(type, message) {
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+
+    if (!$('.toast-container').length) {
+        $('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+    }
+
+    $('.toast-container').append(toastHtml);
+
+    const toast = new bootstrap.Toast(document.getElementById(toastId));
+    toast.show();
+
+    setTimeout(() => {
+        $(`#${toastId}`).remove();
+    }, 5000);
+}
+</script>
+
+<style>
+.member-edit-form .card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.member-edit-form .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+.member-edit-form .form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.member-edit-form .form-control,
+.member-edit-form .form-select {
+    border-radius: 8px;
+    padding: 10px 15px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.member-edit-form .form-control:focus,
+.member-edit-form .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.member-edit-form .alert {
+    border-radius: 8px;
+    border: none;
+}
+
+.member-edit-form small.text-muted {
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 5px;
+}
+
+.btn-group {
+    gap: 10px;
+}
+</style>

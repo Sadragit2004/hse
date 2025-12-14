@@ -107,6 +107,15 @@ urlpatterns = [
 
 
   path('ai-assistant/', views.ai_assistant, name='ai_assistant'),
-     path('servicelist/',views.serviceLst,name='servicelist')
+     path('servicelist/',views.serviceLst,name='servicelist'),
+     
+     path('<uuid:company_id>/members/<uuid:member_id>/detail/',
+         views.member_detail, name='member_detail'),
+    path('<uuid:company_id>/members/<uuid:member_id>/change-status/',
+         views.member_change_status, name='member_change_status'),
+    path('<uuid:company_id>/members/<uuid:member_id>/edit/',
+         views.member_edit, name='member_edit'),
+    path('<uuid:company_id>/members/<uuid:member_id>/delete/',
+         views.member_delete, name='member_delete'),
 
 ]

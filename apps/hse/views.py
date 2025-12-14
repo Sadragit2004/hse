@@ -881,7 +881,7 @@ def invitation_create(request, company_id):
                         related_object_id=invitation.id,
                         related_object_type='invitation'
                     )
-                    messages.success(request, f'دعوت برای {user.get_full_name() or mobile} ارسال شد')
+                    messages.success(request, f'دعوت برای {user.full_name or mobile} ارسال شد')
                 else:
                     messages.success(request, f'دعوت برای شماره {mobile} ذخیره شد')
 
@@ -1080,11 +1080,11 @@ def get_user_display_name(user):
     if not user.is_authenticated:
         return "کاربر ناشناس"
 
-    # اولویت ۱: get_full_name اگر تابع باشد
-    if hasattr(user, 'get_full_name'):
-        if callable(user.get_full_name):
+    # اولویت ۱: full_name اگر تابع باشد
+    if hasattr(user, 'full_name'):
+        if callable(user.full_name):
             try:
-                result = user.get_full_name()
+                result = user.full_name
                 if result and result.strip():
                     return result.strip()
             except Exception:
@@ -1092,8 +1092,8 @@ def get_user_display_name(user):
         else:
             # اگر property باشد
             try:
-                if user.get_full_name and user.get_full_name.strip():
-                    return user.get_full_name.strip()
+                if user.full_name and user.full_name.strip():
+                    return user.full_name.strip()
             except Exception:
                 pass
 
@@ -1160,7 +1160,7 @@ def invitation_resend(request, invitation_id):
                 related_object_id=new_invitation.id,
                 related_object_type='invitation'
             )
-            messages.success(request, f'دعوت مجدد برای {new_invitation.invited_user.get_full_name()} ارسال شد')
+            messages.success(request, f'دعوت مجدد برای {new_invitation.invited_user.full_name} ارسال شد')
         else:
             messages.success(request, f'دعوت مجدد برای شماره {new_invitation.invited_mobile} ارسال شد')
 
@@ -1888,3 +1888,260 @@ def ai_assistant(request):
 def serviceLst(request):
 
     return render(request,'hse/service/servicelist.html')
+
+
+
+
+# در بخش Company Member Views بعد از member_list ویوهای زیر را اضافه کنید:
+
+@login_required_company_member
+def member_detail(request, company_id, member_id):
+    """نمایش جزئیات کامل یک عضو"""
+    company = get_object_or_404(Company, id=company_id)
+    member = get_object_or_404(CompanyMember, id=member_id, company=company)
+
+    # بازرسی‌هایی که این عضو مسئول آن‌هاست
+    assigned_inspections = member.assigned_inspections.all().order_by('-created_at')[:5]
+
+    # وظایف محول شده به این عضو
+    assigned_tasks = member.assigned_tasks.all().order_by('-created_at')[:5]
+
+    # حوادث گزارش شده توسط این عضو (اگر باشد)
+    reported_incidents = member.reported_incidents.all().order_by('-incident_date')[:5]
+
+    # آموزش‌هایی که این عضو در آن‌ها شرکت کرده است
+    training_participations = member.training_participations.select_related('training').order_by('-registered_at')[:5]
+
+    context = {
+        'company': company,
+        'member': member,
+        'assigned_inspections': assigned_inspections,
+        'assigned_tasks': assigned_tasks,
+        'reported_incidents': reported_incidents,
+        'training_participations': training_participations,
+        'page_title': f'جزئیات عضو - {member.user.full_name}'
+    }
+
+    # اگر درخواست AJAX باشد (برای Modal)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'hse/company/member_detail_partial.html', context)
+
+    return render(request, 'hse/company/member_detail.html', context)
+
+
+@login_required_company_member
+@require_POST
+def member_change_status(request, company_id, member_id):
+    """تغییر وضعیت عضو"""
+    company = get_object_or_404(Company, id=company_id)
+    member = get_object_or_404(CompanyMember, id=member_id, company=company)
+
+    new_status = request.POST.get('status')
+    leave_date = request.POST.get('leave_date')
+
+    # اعتبارسنجی وضعیت
+    valid_statuses = [choice[0] for choice in CompanyMember.Status.choices]
+
+    if new_status not in valid_statuses:
+        return JsonResponse({
+            'success': False,
+            'error': 'وضعیت نامعتبر است'
+        }, status=400)
+
+    try:
+        # تغییر وضعیت
+        member.status = new_status
+
+        # اگر وضعیت به غیرفعال تغییر کرد و تاریخ ترک ارائه شده است
+        if new_status == 'INACTIVE' and leave_date:
+            member.leave_date = leave_date
+        elif new_status != 'INACTIVE':
+            member.leave_date = None
+
+        member.save()
+
+        # ایجاد اعلان برای کاربر (اگر کاربر فعال باشد)
+        if member.user != request.user:
+            Notification.objects.create(
+                user=member.user,
+                title=f"تغییر وضعیت در شرکت {company.name}",
+                message=f"وضعیت شما در شرکت {company.name} به '{member.get_status_display()}' تغییر یافت.",
+                notification_type='SYSTEM',
+                related_object_id=member.id,
+                related_object_type='member'
+            )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'وضعیت عضو با موفقیت تغییر کرد',
+            'new_status': new_status,
+            'new_status_display': member.get_status_display(),
+            'leave_date': member.leave_date.strftime('%Y-%m-%d') if member.leave_date else None
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'خطا در تغییر وضعیت: {str(e)}'
+        }, status=500)
+
+
+# apps/hse/views.py
+@login_required_company_member
+def member_edit(request, company_id, member_id):
+    """ویرایش اطلاعات عضو - شامل نام و نام خانوادگی"""
+    company = get_object_or_404(Company, id=company_id)
+    member = get_object_or_404(CompanyMember, id=member_id, company=company)
+
+    if request.method == 'POST':
+        # دریافت داده‌ها از فرم
+        position = request.POST.get('position', member.position)
+        department_id = request.POST.get('department')
+        status = request.POST.get('status', member.status)
+        leave_date = request.POST.get('leave_date')
+
+        # دریافت نام و نام خانوادگی جدید
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+
+        # اعتبارسنجی
+        errors = {}
+
+        # اعتبارسنجی موقعیت
+        if not position:
+            errors['position'] = 'سمت الزامی است'
+
+        # اعتبارسنجی وضعیت
+        valid_statuses = [choice[0] for choice in CompanyMember.Status.choices]
+        if status not in valid_statuses:
+            errors['status'] = 'وضعیت نامعتبر است'
+
+        if errors:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': errors
+                }, status=400)
+            else:
+                messages.error(request, 'خطا در اعتبارسنجی اطلاعات')
+                return redirect('hse:member_edit', company_id=company.id, member_id=member.id)
+
+        try:
+            # به‌روزرسانی اطلاعات عضو
+            member.position = position
+            member.status = status
+
+            # به‌روزرسانی بخش
+            if department_id:
+                try:
+                    department = CompanyDepartment.objects.get(id=department_id, company=company)
+                    member.department = department
+                except CompanyDepartment.DoesNotExist:
+                    member.department = None
+            else:
+                member.department = None
+
+            # به‌روزرسانی تاریخ ترک
+            if status == 'INACTIVE' and leave_date:
+                try:
+                    member.leave_date = datetime.strptime(leave_date, '%Y-%m-%d').date()
+                except ValueError:
+                    member.leave_date = date.today()
+            elif status != 'INACTIVE':
+                member.leave_date = None
+
+            member.save()
+
+            # به‌روزرسانی نام و نام خانوادگی کاربر
+            if first_name or last_name:
+                try:
+                    user = member.user
+                    if first_name:
+                        user.name = first_name
+                    if last_name:
+                        user.family = last_name
+                    user.save()
+
+                    # ایجاد اعلان برای کاربر
+                    try:
+                        if user != request.user:
+                            Notification.objects.create(
+                                user=user,
+                                title=f"به‌روزرسانی اطلاعات در شرکت {company.name}",
+                                message=f"اطلاعات شخصی شما در شرکت {company.name} به‌روزرسانی شد.",
+                                notification_type='SYSTEM',
+                                related_object_id=member.id,
+                                related_object_type='member'
+                            )
+                    except Exception:
+                        pass
+
+                except Exception as e:
+                    print(f"Error updating user info: {e}")
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'اطلاعات عضو با موفقیت ویرایش شد'
+                })
+
+            messages.success(request, 'اطلاعات عضو با موفقیت ویرایش شد.')
+            return redirect('hse:member_detail', company_id=company.id, member_id=member.id)
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': f'خطا در ویرایش عضو: {str(e)}'
+                }, status=500)
+
+            messages.error(request, f'خطا در ویرایش عضو: {str(e)}')
+            return redirect('hse:member_edit', company_id=company.id, member_id=member.id)
+
+    # GET request - نمایش فرم
+    context = {
+        'company': company,
+        'member': member,
+        'user': member.user,
+        'departments': company.departments.all(),
+    }
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'hse/company/member_edit_partial.html', context)
+
+    return render(request, 'hse/company/member_edit.html', context)
+
+
+@login_required_company_member
+def member_delete(request, company_id, member_id):
+    """حذف عضو از شرکت"""
+    company = get_object_or_404(Company, id=company_id)
+    member = get_object_or_404(CompanyMember, id=member_id, company=company)
+
+    # فقط مالک شرکت یا خود کاربر می‌تواند حذف شود
+    if company.user != request.user and member.user != request.user:
+        return JsonResponse({
+            'success': False,
+            'error': 'شما مجوز حذف این عضو را ندارید'
+        }, status=403)
+
+    if request.method == 'POST':
+        member_name = member.user.full_name
+        member.delete()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'عضو "{member_name}" با موفقیت حذف شد'
+            })
+
+        messages.success(request, f'عضو "{member_name}" با موفقیت حذف شد.')
+        return redirect('hse:member_list', company_id=company.id)
+
+    context = {
+        'company': company,
+        'member': member,
+        'page_title': f'حذف عضو - {member.user.full_name}'
+    }
+
+    return render(request, 'hse/company/member_delete.html', context)

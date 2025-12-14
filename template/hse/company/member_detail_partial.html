@@ -1,0 +1,677 @@
+<!-- templates/hse/company/member_detail_partial.html -->
+<div class="member-details-container">
+    <!-- هدر اطلاعات شخصی -->
+    <div class="d-flex align-items-center mb-4">
+        <div class="avatar me-3">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                 style="width: 80px; height: 80px; font-size: 2rem;">
+                {{ member.user.name|slice:"0:1"|default:member.user.family|slice:"0:1"|default:member.user.mobileNumber|slice:"0:1" }}
+            </div>
+        </div>
+        <div>
+            <h4 class="mb-1">
+                {% if member.user.name or member.user.family %}
+                    {{ member.user.name|default:'' }} {{ member.user.family|default:'' }}
+                {% else %}
+                    {{ member.user.mobileNumber }}
+                {% endif %}
+            </h4>
+            <p class="text-muted mb-2">
+                <i class="fas fa-phone me-1"></i>{{ member.user.mobileNumber }}
+                {% if member.user.email %}
+                • <i class="fas fa-envelope me-1"></i>{{ member.user.email }}
+                {% endif %}
+            </p>
+            <div class="d-flex gap-2">
+                <span class="badge
+                    {% if member.position == 'MANAGER' %}bg-danger
+                    {% elif member.position == 'SUPERVISOR' %}bg-warning
+                    {% elif member.position == 'EXPERT' %}bg-info
+                    {% else %}bg-secondary{% endif %}">
+                    {{ member.get_position_display }}
+                </span>
+                <span class="badge
+                    {% if member.status == 'ACTIVE' %}bg-success
+                    {% elif member.status == 'INACTIVE' %}bg-secondary
+                    {% else %}bg-warning{% endif %}">
+                    {{ member.get_status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- اطلاعات شخصی -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>اطلاعات شخصی</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td width="40%"><strong>نام:</strong></td>
+                                <td>{{ member.user.name|default:"--" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>نام خانوادگی:</strong></td>
+                                <td>{{ member.user.family|default:"--" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>شماره موبایل:</strong></td>
+                                <td>{{ member.user.mobileNumber }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ایمیل:</strong></td>
+                                <td>{{ member.user.email|default:"--" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>جنسیت:</strong></td>
+                                <td>
+                                    {% if member.user.gender == "M" %}
+                                        مرد
+                                    {% elif member.user.gender == "F" %}
+                                        زن
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if member.user.birth_date %}
+                            <tr>
+                                <td><strong>تاریخ تولد:</strong></td>
+                                <td>{{ member.user.birth_date|date:"Y/m/d" }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>نقش سیستم:</strong></td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ member.user.get_role_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-building me-2"></i>اطلاعات شرکت</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td width="40%"><strong>شرکت:</strong></td>
+                                <td>{{ member.company.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>حوزه فعالیت:</strong></td>
+                                <td>{{ member.company.activity_field }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>بخش:</strong></td>
+                                <td>
+                                    {% if member.department %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-sitemap me-1"></i>
+                                        {{ member.department.name }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">تعیین نشده</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>سمت:</strong></td>
+                                <td>
+                                    <span class="badge
+                                        {% if member.position == 'MANAGER' %}bg-danger
+                                        {% elif member.position == 'SUPERVISOR' %}bg-warning
+                                        {% elif member.position == 'EXPERT' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ member.get_position_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>تاریخ عضویت:</strong></td>
+                                <td>
+                                    {{ member.join_date|date:"Y/m/d" }}
+                                    <small class="text-muted d-block">({{ member.join_date|timesince }} پیش)</small>
+                                </td>
+                            </tr>
+                            {% if member.leave_date %}
+                            <tr>
+                                <td><strong>تاریخ ترک:</strong></td>
+                                <td class="text-danger">
+                                    {{ member.leave_date|date:"Y/m/d" }}
+                                    <small class="text-muted d-block">({{ member.leave_date|timesince }} پیش)</small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>وضعیت:</strong></td>
+                                <td>
+                                    <span class="badge
+                                        {% if member.status == 'ACTIVE' %}bg-success
+                                        {% elif member.status == 'INACTIVE' %}bg-secondary
+                                        {% else %}bg-warning{% endif %}">
+                                        {{ member.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آمار فعالیت -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>آمار فعالیت</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-item">
+                                <div class="stat-number text-primary">{{ assigned_inspections|length }}</div>
+                                <div class="stat-label">بازرسی محول شده</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-item">
+                                <div class="stat-number text-success">{{ assigned_tasks|length }}</div>
+                                <div class="stat-label">وظیفه محول شده</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-item">
+                                <div class="stat-number text-warning">{{ reported_incidents|length }}</div>
+                                <div class="stat-label">حادثه گزارش شده</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-item">
+                                <div class="stat-number text-info">{{ training_participations|length }}</div>
+                                <div class="stat-label">آموزش شرکت کرده</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بازرسی‌های اخیر -->
+    {% if assigned_inspections %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>بازرسی‌های محول شده</h6>
+                    <small class="text-muted">۵ مورد اخیر</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>عنوان</th>
+                                    <th>اولویت</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ برنامه‌ریزی</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inspection in assigned_inspections %}
+                                <tr>
+                                    <td>
+                                        {% url 'hse:inspection_detail' company.id inspection.id as inspection_url %}
+                                        {% if inspection_url %}
+                                        <a href="{{ inspection_url }}"
+                                           class="text-decoration-none">
+                                            {{ inspection.title|truncatechars:50 }}
+                                        </a>
+                                        {% else %}
+                                        {{ inspection.title|truncatechars:50 }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge
+                                            {% if inspection.priority == 'HIGH' %}bg-danger
+                                            {% elif inspection.priority == 'MEDIUM' %}bg-warning
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ inspection.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge
+                                            {% if inspection.status == 'COMPLETED' %}bg-success
+                                            {% elif inspection.status == 'IN_PROGRESS' %}bg-primary
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ inspection.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ inspection.scheduled_date|date:"Y/m/d" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- وظایف اخیر -->
+    {% if assigned_tasks %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-tasks me-2"></i>وظایف محول شده</h6>
+                    <small class="text-muted">۵ مورد اخیر</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>عنوان</th>
+                                    <th>اولویت</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ سررسید</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in assigned_tasks %}
+                                <tr>
+                                    <td>
+                                        {% url 'hse:task_detail' company.id task.id as task_url %}
+                                        {% if task_url %}
+                                        <a href="{{ task_url }}"
+                                           class="text-decoration-none">
+                                            {{ task.title|truncatechars:50 }}
+                                        </a>
+                                        {% else %}
+                                        {{ task.title|truncatechars:50 }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge
+                                            {% if task.priority == 'URGENT' %}bg-danger
+                                            {% elif task.priority == 'HIGH' %}bg-warning
+                                            {% elif task.priority == 'MEDIUM' %}bg-primary
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ task.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge
+                                            {% if task.status == 'COMPLETED' %}bg-success
+                                            {% elif task.status == 'IN_PROGRESS' %}bg-primary
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ task.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{ task.due_date|date:"Y/m/d"|default:"--" }}
+                                        {% if task.due_date and task.due_date < today %}
+                                        <span class="badge bg-danger ms-1">معوقه</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- حوادث گزارش شده -->
+    {% if reported_incidents %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>حوادث گزارش شده</h6>
+                    <small class="text-muted">۵ مورد اخیر</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>عنوان</th>
+                                    <th>نوع</th>
+                                    <th>سطح</th>
+                                    <th>تاریخ وقوع</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for incident in reported_incidents %}
+                                <tr>
+                                    <td>
+                                        {% url 'hse:incident_detail' company.id incident.id as incident_url %}
+                                        {% if incident_url %}
+                                        <a href="{{ incident_url }}"
+                                           class="text-decoration-none">
+                                            {{ incident.title|truncatechars:50 }}
+                                        </a>
+                                        {% else %}
+                                        {{ incident.title|truncatechars:50 }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ incident.get_incident_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge
+                                            {% if incident.severity_level == 'SEVERE' %}bg-danger
+                                            {% elif incident.severity_level == 'HIGH' %}bg-warning
+                                            {% elif incident.severity_level == 'MEDIUM' %}bg-primary
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ incident.get_severity_level_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ incident.incident_date|date:"Y/m/d" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- آموزش‌های شرکت کرده -->
+    {% if training_participations %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>آموزش‌های شرکت کرده</h6>
+                    <small class="text-muted">۵ مورد اخیر</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>عنوان آموزش</th>
+                                    <th>نوع</th>
+                                    <th>وضعیت حضور</th>
+                                    <th>تاریخ ثبت‌نام</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for participation in training_participations %}
+                                <tr>
+                                    <td>{{ participation.training.title|truncatechars:50 }}</td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ participation.training.get_training_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge
+                                            {% if participation.attendance_status == 'ATTENDED' %}bg-success
+                                            {% elif participation.attendance_status == 'ABSENT' %}bg-danger
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ participation.get_attendance_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ participation.registered_at|date:"Y/m/d" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- دکمه‌های عملیات -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>بستن
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-warning edit-member-btn"
+                            data-member-id="{{ member.id }}" data-company-id="{{ company.id }}">
+                        <i class="fas fa-edit me-2"></i>ویرایش اطلاعات
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="printMemberDetails()">
+                        <i class="fas fa-print me-2"></i>چاپ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.member-details-container {
+    font-family: 'Vazirmatn', sans-serif;
+}
+
+.avatar {
+    flex-shrink: 0;
+}
+
+.stat-item {
+    padding: 15px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    vertical-align: middle;
+    border-color: #eee;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.btn-group {
+    gap: 10px;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.text-muted {
+    font-size: 0.9rem;
+}
+
+h4 {
+    color: #333;
+    font-weight: 700;
+}
+
+h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+strong {
+    color: #333;
+}
+</style>
+
+<script>
+function printMemberDetails() {
+    const printContents = document.querySelector('.member-details-container').innerHTML;
+    const originalContents = document.body.innerHTML;
+
+    document.body.innerHTML = `
+        <!DOCTYPE html>
+        <html lang="fa" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <title>جزئیات عضو - {{ member.user.name|default:'' }} {{ member.user.family|default:'' }}</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+            <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+            <style>
+                body {
+                    padding: 20px;
+                    font-family: 'Vazirmatn', sans-serif;
+                }
+                .badge {
+                    padding: 5px 10px;
+                    border-radius: 20px;
+                    font-size: 0.85rem;
+                }
+                .stat-item {
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    margin-bottom: 10px;
+                }
+                .stat-number {
+                    font-size: 2rem;
+                    font-weight: bold;
+                }
+                .table th {
+                    background-color: #f8f9fa;
+                    font-weight: 600;
+                }
+                .card {
+                    border: 1px solid #dee2e6;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                }
+                .card-header {
+                    background-color: #f8f9fa;
+                    font-weight: 600;
+                }
+                @media print {
+                    .no-print { display: none !important; }
+                    .btn { display: none !important; }
+                    .card {
+                        break-inside: avoid;
+                        page-break-inside: avoid;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="text-center mb-4">
+                    <h2 class="mb-3">جزئیات عضو شرکت</h2>
+                    <h4 class="text-primary">
+                        {% if member.user.name or member.user.family %}
+                            {{ member.user.name|default:'' }} {{ member.user.family|default:'' }}
+                        {% else %}
+                            {{ member.user.mobileNumber }}
+                        {% endif %}
+                    </h4>
+                    <p class="text-muted">شرکت: {{ company.name }}</p>
+                    <hr>
+                </div>
+                ${printContents}
+                <div class="no-print text-center mt-4">
+                    <hr>
+                    <small>چاپ شده در ${new Date().toLocaleDateString('fa-IR')} ساعت ${new Date().toLocaleTimeString('fa-IR')}</small>
+                    <p class="text-muted mt-2">سیستم مدیریت HSE</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    setTimeout(() => {
+        window.print();
+        document.body.innerHTML = originalContents;
+        window.location.reload();
+    }, 500);
+}
+</script>

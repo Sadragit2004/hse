@@ -344,10 +344,10 @@ $(document).ready(function() {
 
         // بارگذاری جزئیات عضو با AJAX
         $.ajax({
-            url: `/hse/companies/{{ company.id }}/members/${memberId}/detail/`,
+            url: `/hse/{{ company.id }}/members/${memberId}/detail/`,
             method: 'GET',
             success: function(response) {
-                $('#memberDetails').html(response.html);
+                $('#memberDetails').html(response);
             },
             error: function() {
                 $('#memberDetails').html(`
@@ -385,7 +385,7 @@ $(document).ready(function() {
         const leaveDate = $('#leaveDate').val();
 
         $.ajax({
-            url: `/hse/companies/{{ company.id }}/members/${memberId}/change-status/`,
+            url: `/hse/{{ company.id }}/members/${memberId}/change-status/`,
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
@@ -422,6 +422,102 @@ $(document).ready(function() {
             },
             error: function() {
                 showToast('error', 'خطا در تغییر وضعیت عضو');
+            }
+        });
+    });
+
+    // ویرایش عضو
+    $('.edit-member').click(function() {
+        const memberId = $(this).data('member-id');
+
+        // بارگذاری فرم ویرایش با AJAX
+        $.ajax({
+            url: `/hse/{{ company.id }}/members/${memberId}/edit/`,
+            method: 'GET',
+            success: function(response) {
+                // ایجاد Modal جدید برای ویرایش
+                const modalHtml = `
+                    <div class="modal fade" id="editMemberModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-white">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-edit me-2"></i>
+                                        ویرایش اطلاعات عضو
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    ${response}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // اضافه کردن Modal به صفحه
+                if ($('#editMemberModal').length === 0) {
+                    $('body').append(modalHtml);
+                } else {
+                    $('#editMemberModal').replaceWith(modalHtml);
+                }
+
+                // نمایش Modal
+                const editModal = new bootstrap.Modal(document.getElementById('editMemberModal'));
+                editModal.show();
+            },
+            error: function() {
+                showToast('error', 'خطا در بارگذاری فرم ویرایش');
+            }
+        });
+    });
+
+    // ویرایش عضو از داخل Modal جزئیات
+    $(document).on('click', '.edit-member-btn', function() {
+        const memberId = $(this).data('member-id');
+        const companyId = $(this).data('company-id');
+
+        // بارگذاری فرم ویرایش با AJAX
+        $.ajax({
+            url: `/hse/${companyId}/members/${memberId}/edit/`,
+            method: 'GET',
+            success: function(response) {
+                // ایجاد Modal جدید برای ویرایش
+                const modalHtml = `
+                    <div class="modal fade" id="editMemberModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-white">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-edit me-2"></i>
+                                        ویرایش اطلاعات عضو
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    ${response}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // اضافه کردن Modal به صفحه
+                if ($('#editMemberModal').length === 0) {
+                    $('body').append(modalHtml);
+                } else {
+                    $('#editMemberModal').replaceWith(modalHtml);
+                }
+
+                // بستن Modal جزئیات
+                $('#viewMemberModal').modal('hide');
+
+                // نمایش Modal ویرایش
+                const editModal = new bootstrap.Modal(document.getElementById('editMemberModal'));
+                editModal.show();
+            },
+            error: function() {
+                showToast('error', 'خطا در بارگذاری فرم ویرایش');
             }
         });
     });
